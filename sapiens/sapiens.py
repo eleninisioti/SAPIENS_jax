@@ -14,8 +14,9 @@ from flax.training.train_state import TrainState
 from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 import gymnax
 import flashbax as fbx
+from flashbax.buffers.trajectory_buffer import TrajectoryBuffer
 import matplotlib.pyplot as plt
-
+import numpy as onp
 os.environ["AX_TRACEBACK_FILTERING"] = "off"
 
 
@@ -45,6 +46,37 @@ class CustomTrainState(TrainState):
     timesteps: int
     n_updates: int
     buffer_diversity: float
+    neighbors: jnp.array
+    keep_neighbors: jnp.array
+
+
+class CustomBuffer(TrajectoryBuffer):
+    def __call__(self, config):
+
+        buffer = fbx.make_flat_buffer(
+            max_length=config["BUFFER_SIZE"],
+            min_length=config["BUFFER_BATCH_SIZE"],
+            sample_batch_size=config["BUFFER_BATCH_SIZE"],
+            add_sequences=False,
+            add_batch_size=1+config["NUM_NEIGHBORS"]*config["SHARED_BATCH_SIZE"],
+        )
+        buffer = buffer.replace(
+            init=jax.jit(buffer.init),
+            add=jax.jit(buffer.add, donate_argnums=0),
+            sample=jax.jit(buffer.sample),
+            can_sample=jax.jit(buffer.can_sample),
+        )
+        return buffer
+
+    def sample_for_sharing(self, shared_batch_size):
+        exp = self.sample()
+
+        # keep only the size u need
+        exp = jax.tree_map(lambda x: x[:shared_batch_size], exp)
+        return exp
+
+
+
 
 
 def make_train(config):
@@ -89,7 +121,7 @@ def make_train(config):
             can_sample=jax.jit(buffer.can_sample),
         )
 
-        def init_agent(rng):
+        def init_agent(rng, agent_id):
             rng, _rng = jax.random.split(rng)
 
             init_obs, env_state = vmap_reset(1)(_rng)
@@ -110,6 +142,8 @@ def make_train(config):
             init_x = jnp.zeros(env.observation_space(env_params).shape)
             network_params = network.init(_rng, init_x)
 
+            neighbors = config["initial_graph"][agent_id]
+
 
 
             train_state = CustomTrainState.create(
@@ -119,7 +153,8 @@ def make_train(config):
                 tx=tx,
                 timesteps=0,
                 n_updates=0,
-                buffer_diversity=0
+                buffer_diversity=0,
+                neighbors=neighbors,
             )
             return train_state, env_state, init_obs, buffer_state
 
@@ -127,8 +162,9 @@ def make_train(config):
         rng, _rng = jax.random.split(rng)
 
         agent_keys = jax.random.split(_rng, config["NUM_AGENTS"])
+        agent_ids = jnp.arange(config["NUM_AGENTS"])
 
-        train_states, env_state, init_obs, buffer_states = jax.vmap(init_agent)(agent_keys)
+        train_states, env_state, init_obs, buffer_states = jax.vmap(init_agent)(agent_keys, agent_ids)
 
         # epsilon-greedy exploration
         def eps_greedy_exploration(rng, q_vals, t):
@@ -183,7 +219,45 @@ def make_train(config):
             timestep = TimeStep(obs=last_obs, action=action, reward=reward, done=done)
 
             timestep = jax.tree_map(lambda x: jnp.expand_dims(x,1), timestep)
-            buffer_state = jax.vmap(buffer.add, in_axes=(0,0))(buffer_state, timestep)
+
+            # add the shared experiencees
+            def sample_buffer(buffer_state):
+                keys = jax.random.split(rng, config["NUM_NEIGHBORS"])
+                exp = jax.vmap(buffer.sample, in_axes=(None, 0))(buffer_state,
+                                                                 keys)  # actually we need n_agents samples
+                return exp.experience.first
+
+            exp = jax.vmap(sample_buffer)(buffer_state)
+
+            def buffer_add_batch(i, carry):
+                buffer_state, train_state, exp = carry
+                i = train_state.neighbors[i]
+                exp_current = jax.tree_map(lambda x: x[i, ...], exp)
+                exp_current = jax.tree_map(lambda x: jnp.expand_dims(x, axis=1), exp_current)
+
+                def add_to_buffer(i, carry):
+                    current_exp = jax.tree_map(lambda x: x[i, ...], exp_current)
+                    return buffer.add(carry, current_exp)
+
+                buffer_state = jax.lax.fori_loop(lower=0, upper=config["BUFFER_SHARE_BATCH_SIZE"],
+                                                 body_fun=add_to_buffer,
+                                                 init_val=buffer_state)
+                return (buffer_state, train_state, exp)
+                # return jax.vmap(buffer.add, in_axes=(None,0))(buffer_state, exp)
+
+            def add_buffer_agent(buffer_state, train_state, exp):
+                # buffest_state =
+                # buffer_state, _, _ = jax.lax.fori_loop(lower=0, upper=config["NUM_NEIGHBORS"], body_fun=buffer_add_batch,
+                #                           init_val=(buffer_state, train_state, exp))
+                # return buffer_state
+                return jax.vmap(buffer_add_batch, in_axes=(None, 0))(buffer_state, exp)
+
+            shared_exp = jax.vmap(buffer.sample_for_sharing)(buffer_state, agent_keys)
+            total_exp = timestep + shared_exp #TODO: just concatenate here
+            buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
+
+
+            #buffer_state = jax.vmap(buffer.add, in_axes=(0,0))(buffer_state, timestep)
 
             buffer_obs = buffer_state.experience.obs
 
@@ -279,6 +353,33 @@ def make_train(config):
                 )
                 return  value
 
+            def is_visit_time(buffer_state, train_state, key):
+                value = (
+                        (buffer.can_sample(buffer_state))
+                        & (  # enough experience in buffer
+                                train_state.timesteps > config["LEARNING_STARTS"]
+                        )
+                        & (  # pure exploration phase ended
+                               jax.random.uniform(key) < config["PROB_VISIT"]
+                        )  # training interval
+                )
+                return  value
+
+            def is_return_time(buffer_state, train_state, key):
+                # START HERE
+                value = (
+                        (buffer.can_sample(buffer_state))
+                        & (  # enough experience in buffer
+                                train_state.timesteps > config["LEARNING_STARTS"]
+                        )
+                        & (  # pure exploration phase ended
+                               jax.random.uniform(key) < config["PROB_VISIT"]
+                        )  # training interval
+                )
+                return  value
+
+
+
             rng, _rng = jax.random.split(rng)
             is_learn_time = jax.vmap(is_learn_time)(buffer_state, train_state)
             is_learn_time = is_learn_time[0]
@@ -293,6 +394,38 @@ def make_train(config):
                 train_state,
                 _rng_group,
             )
+
+            def _implement_visit(train_state, key, agent_id):
+                # choose another subgroup
+                agents = jnp.arange(config["NUM_AGENTS"])
+                to_visit = jax.random.choice(key, agents)
+
+                neighbors = train_state.neighbors # just for keeping
+
+                new_neighbors = jnp.concatenate([train_state.neighbors[to_visit], jnp.array([to_visit])], axis=0)
+                update_neighbors = jnp.concatenate([train_state.neighbors, agent_id ])
+
+                prev_neighbors = train_state.neighbors
+                updated_neighbors = prev_neighbors.at[agent_id].set(new_neighbors)
+                updated_neighbors = updated_neighbors.at[to_visit].set(update_neighbors)
+                updated_neighbors = updated_neighbors.at[train_state.neighbors[to_visit]].set(update_neighbors)
+
+
+
+                train_state = train_state._replace(neighbors=updated_neighbors, keep_neighbors=neighbors)
+                return train_state
+
+            def _check_visit(is_visit_time, train_state, key, agent_id):
+                train_state = jax.lax.cond(is_visit_time,
+                                           lambda train_state, key: _implement_visit(train_state, key, agent_id),
+                                           lambda train_state, key: (train_state, jnp.array([0.0] * config["NUM_AGENTS"])))
+                return train_state
+
+            agent_ids = jnp.arange(config["NUM_ANGENTS"])
+
+            #is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group, agent_ids)
+
+            #train_state = jax.vmap(_check_visit)(is_visit_time, train_state, buffer_state, _rng_group)
 
             def update_target(train_state):
                 new_state = jax.lax.cond(
@@ -317,34 +450,7 @@ def make_train(config):
 
             #"""
 
-            def sample_buffer(buffer_state):
-                keys = jax.random.split(rng, config["NUM_NEIGHBORS"])
-                exp = jax.vmap(buffer.sample, in_axes=(None, 0))(buffer_state,keys) # actually we need n_agents samples
-                return exp.experience.first
 
-            exp = jax.vmap(sample_buffer)(buffer_state)
-
-            def buffer_add_batch(i, carry):
-                buffer_state, exp = carry
-                exp_current = jax.tree_map(lambda x: x[i,...], exp)
-                exp_current = jax.tree_map(lambda x: jnp.expand_dims(x,axis=1), exp_current)
-
-                def add_to_buffer(i, carry):
-                    current_exp = jax.tree_map(lambda x: x[i,...], exp_current)
-                    return buffer.add(carry, current_exp)
-                buffer_state = jax.lax.fori_loop(lower=0, upper=config["BUFFER_SHARE_BATCH_SIZE"], body_fun=add_to_buffer,
-                                           init_val=buffer_state)
-                return (buffer_state, exp)
-                #return jax.vmap(buffer.add, in_axes=(None,0))(buffer_state, exp)
-
-            def add_batch(buffer_state, exp):
-                #buffest_state =
-                buffer_state, exp = jax.lax.fori_loop(lower=0, upper=config["NUM_NEIGHBORS"], body_fun=buffer_add_batch,
-                                           init_val=(buffer_state,exp))
-                return buffer_state
-                #return jax.vmap(buffer_add_batch, in_axes=(None,0))(buffer_state,exp)
-        
-            buffer_state= jax.vmap(add_batch)(buffer_state, exp)
             #"""
             #buffer_state = jax.vmap(jax.vmap(buffer.add))(buffer_state, exp)
 
@@ -389,9 +495,46 @@ def make_train(config):
     return train
 
 
-def init_connectivity(config, connectivity="fully"):
-    if connectivity == "fully":
+def init_connectivity(config):
+    if config["CONNECTIVITY"] == "fully":
         config["NUM_NEIGHBORS"] = config["NUM_AGENTS"]-1
+
+        neighbors = [onp.arange(config["NUM_AGENTS"]).tolist() for _ in range(config["NUM_AGENTS"])]
+        initial_graph = []
+        for idx, el in enumerate(neighbors):
+            el.remove(idx)
+            initial_graph.append(el)
+
+    elif config["CONNECTIVITY"] == "dynamic":
+        config["NUM_NEIGHBORS"] = 2 # start with one neighbor but due to visits the maximum is two
+
+        group_id = 0
+        neighbors = []
+        for i in range(config["NUM_AGENTS"]):
+            neighbors.append([group_id, group_id+1])
+
+            if i%2 == 1:
+                group_id +=2
+
+        initial_graph = []
+        for idx, el in enumerate(neighbors):
+            el.remove(idx)
+            initial_graph.append(el)
+
+        """
+        for 
+
+
+        def connect_fully(agent_id):
+            mask = jnp.arange(config["NUM_NEIGHBORS"]) != agent_id  # Create a mask for all indices except `idx`
+            neighbors= jnp.arange(config["NUM_NEIGHBORS"])
+            neighbors = neighbors[mask]
+            return neighbors
+        agent_ids = jnp.arange(config["NUM_AGENTS"])
+        initial_graph = jax.vmap(connect_fully)(agent_ids)
+        """
+    config["initial_graph"] = jnp.array(initial_graph)
+
     return config
 
 
@@ -404,7 +547,7 @@ def main():
         "BUFFER_SIZE": 10000,
         "BUFFER_BATCH_SIZE": 128,
         "BUFFER_SHARE_BATCH_SIZE": 128,
-
+        "CONNECTIVITY": "fully",
         "TOTAL_TIMESTEPS": 5e5,
         "EPSILON_START": 1.0,
         "EPSILON_FINISH": 0.05,
@@ -413,6 +556,7 @@ def main():
         "LR": 2.5e-4,
         "LEARNING_STARTS": 10000,
         "TRAINING_INTERVAL": 10,
+        "PROB_VISIT": 0.2,
         "LR_LINEAR_DECAY": False,
         "GAMMA": 0.99,
         "TAU": 1.0,
@@ -430,7 +574,7 @@ def main():
         entity=config["ENTITY"],
         project=config["PROJECT"],
         tags=["DQN", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
-        name=f'sapiens_dqn_{config["ENV_NAME"]}',
+        name=f'sapiens_dqn_{config["ENV_NAME"]}_{config["CONNECTIVITY"]}',
         config=config,
         mode=config["WANDB_MODE"],
     )
