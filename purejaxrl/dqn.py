@@ -252,6 +252,11 @@ def make_train(config):
 
 def main():
 
+    env_name ="Freeway-MinAtar"
+    env_name ="Pendulum-v1"
+    env_name ="MountainCar-v0"
+
+
     config = {
         "NUM_ENVS": 10,
         "BUFFER_SIZE": 10000,
@@ -267,7 +272,7 @@ def main():
         "LR_LINEAR_DECAY": False,
         "GAMMA": 0.99,
         "TAU": 1.0,
-        "ENV_NAME": "CartPole-v1",
+        "ENV_NAME": env_name,
         "SEED": 1,
         "NUM_SEEDS": 15,
         "WANDB_MODE": "online",  # set to online to activate wandb
@@ -305,4 +310,6 @@ def main():
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
     main()
