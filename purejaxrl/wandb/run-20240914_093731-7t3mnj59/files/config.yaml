@@ -1,0 +1,89 @@
+wandb_version: 1
+
+NUM_ENVS:
+  desc: null
+  value: 10
+BUFFER_SIZE:
+  desc: null
+  value: 10000
+BUFFER_BATCH_SIZE:
+  desc: null
+  value: 128
+TOTAL_TIMESTEPS:
+  desc: null
+  value: 500000.0
+EPSILON_START:
+  desc: null
+  value: 1.0
+EPSILON_FINISH:
+  desc: null
+  value: 0.05
+EPSILON_ANNEAL_TIME:
+  desc: null
+  value: 250000.0
+TARGET_UPDATE_INTERVAL:
+  desc: null
+  value: 500
+LR:
+  desc: null
+  value: 0.00025
+LEARNING_STARTS:
+  desc: null
+  value: 10000
+TRAINING_INTERVAL:
+  desc: null
+  value: 10
+LR_LINEAR_DECAY:
+  desc: null
+  value: false
+GAMMA:
+  desc: null
+  value: 0.99
+TAU:
+  desc: null
+  value: 1.0
+ENV_NAME:
+  desc: null
+  value: CartPole-v1
+SEED:
+  desc: null
+  value: 1
+NUM_SEEDS:
+  desc: null
+  value: 15
+WANDB_MODE:
+  desc: null
+  value: online
+ENTITY:
+  desc: null
+  value: eleni
+PROJECT:
+  desc: null
+  value: sapiens
+_wandb:
+  desc: null
+  value:
+    python_version: 3.9.0
+    cli_version: 0.17.5
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1726306651
+    t:
+      1:
+      - 12
+      - 45
+      - 55
+      2:
+      - 12
+      - 45
+      - 55
+      3:
+      - 13
+      - 15
+      - 16
+      - 23
+      4: 3.9.0
+      5: 0.17.5
+      8:
+      - 5
+      13: linux-x86_64

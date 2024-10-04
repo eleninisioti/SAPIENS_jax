@@ -1,0 +1,129 @@
+
+CUDA backend failed to initialize: Unable to load cuDNN. Is it installed? (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+Traceback (most recent call last):
+  File "/home/eleni/workspace/flowers/SAPIENS_jax/purejaxrl/dqn.py", line 310, in <module>
+    main()
+  File "/home/eleni/workspace/flowers/SAPIENS_jax/purejaxrl/dqn.py", line 292, in main
+    outs = jax.block_until_ready(train_vjit(rngs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 257, in cache_miss
+    outs, out_flat, out_tree, args_flat, jaxpr = _python_pjit_helper(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 163, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _, _, _ = infer_params_fn(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 317, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 493, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat, out_layouts_flat = _pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 996, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 349, in memoized_fun
+    ans = call(fun, *args)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 936, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2288, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2310, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 1258, in vmap_f
+    out_flat = batching.batch(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/workspace/flowers/SAPIENS_jax/purejaxrl/dqn.py", line 67, in train
+    init_obs, env_state = vmap_reset(config["NUM_ENVS"])(_rng)
+  File "/home/eleni/workspace/flowers/SAPIENS_jax/purejaxrl/dqn.py", line 56, in <lambda>
+    vmap_reset = lambda n_envs: lambda rng: jax.vmap(env.reset, in_axes=(0, None))(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 1258, in vmap_f
+    out_flat = batching.batch(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 257, in cache_miss
+    outs, out_flat, out_tree, args_flat, jaxpr = _python_pjit_helper(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 163, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _, _, _ = infer_params_fn(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 317, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 493, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat, out_layouts_flat = _pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 996, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 349, in memoized_fun
+    ans = call(fun, *args)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 936, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2288, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2310, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/gymnax/wrappers/purerl.py", line 81, in reset
+    obs, env_state = self._env.reset(key, params)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 257, in cache_miss
+    outs, out_flat, out_tree, args_flat, jaxpr = _python_pjit_helper(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 163, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _, _, _ = infer_params_fn(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 317, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 493, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat, out_layouts_flat = _pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 996, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 349, in memoized_fun
+    ans = call(fun, *args)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 936, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2288, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2310, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/gymnax/wrappers/purerl.py", line 43, in reset
+    obs, state = self._env.reset(key, params)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/traceback_util.py", line 179, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 257, in cache_miss
+    outs, out_flat, out_tree, args_flat, jaxpr = _python_pjit_helper(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 163, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _, _, _ = infer_params_fn(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/api.py", line 317, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 493, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat, out_layouts_flat = _pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 996, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 349, in memoized_fun
+    ans = call(fun, *args)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/pjit.py", line 936, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2288, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/interpreters/partial_eval.py", line 2310, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/jax/_src/linear_util.py", line 191, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/gymnax/environments/environment.py", line 57, in reset
+    obs, state = self.reset_env(key, params)
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/gymnax/environments/minatar/freeway.py", line 109, in reset_env
+    cars=randomize_cars(
+  File "/home/eleni/anaconda3/envs/jax_sapiens/lib/python3.9/site-packages/gymnax/environments/minatar/freeway.py", line 282, in randomize_cars
+    cars = jax.lax.select(initialize, new_cars, old_cars)
