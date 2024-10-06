@@ -332,10 +332,7 @@ def make_train(config):
                                 train_state.timesteps > config["LEARNING_STARTS"]
                         )
                         & (  # pure exploration phase ended
-                               jax.random.uniform(key) < config["PROB_VISIT"]
-                        )  # training interval
-                        & (  # pure exploration phase ended
-                            jnp.logical_not(train_state.visiting)
+                            train_state.timesteps == train_state.visiting + config["VISIT_DURATION"]
                         )  # training interval
                 )
                 return  value
@@ -374,7 +371,7 @@ def make_train(config):
                 update_neighbors = jnp.concatenate([jnp.array([to_visit]), jnp.array([agent_id]) ],axis=0)
                 updated_neighbors = updated_neighbors.at[second_neighbor].set(update_neighbors)
 
-                train_state = train_state.replace(neighbors=updated_neighbors, keep_neighbors=prev_neighbors,visiting=jnp.ones_like(train_state.visiting))
+                train_state = train_state.replace(neighbors=updated_neighbors, keep_neighbors=prev_neighbors, visiting=train_state.timesteps)
                 return train_state
 
             def _check_visit(is_visit_time, train_state, key, agent_id):
@@ -543,6 +540,7 @@ def main(env_name ,num_agents, connectivity,trial):
         "TRAINING_INTERVAL": 10,
         "DIVERSITY_INTERVAL": 100,
         "PROB_VISIT": 0.2,
+        "VISIT_DURATION": 0.2,
         "LR_LINEAR_DECAY": False,
         "GAMMA": 0.99,
         "TAU": 1.0,

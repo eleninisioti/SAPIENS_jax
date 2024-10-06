@@ -9,7 +9,7 @@ def debug():
     env_name ="CartPole-v1"
     num_agents = 10
 
-    main(env_name, num_agents, connectivity="dynamic")
+    main(env_name, num_agents, connectivity="dynamic",trial=0)
 
 
 
