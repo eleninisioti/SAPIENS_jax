@@ -50,7 +50,7 @@ class CustomTrainState(TrainState):
     buffer_diversity: float
     neighbors: jnp.array
     keep_neighbors: jnp.array
-    visiting: bool
+    visiting: int
 
 
 def make_train(config):
@@ -126,7 +126,7 @@ def make_train(config):
                 target_network_params=jax.tree_map(lambda x: jnp.copy(x), network_params),
                 tx=tx,
                 timesteps=0,
-                visiting = False,
+                visiting = 0,
                 keep_neighbors=jnp.zeros_like(neighbors),
                 n_updates=0,
                 buffer_diversity=0.0,
