@@ -320,6 +320,9 @@ def make_train(config):
                         & (  # pure exploration phase ended
                                 jnp.logical_not(train_state.visiting)
                         )  # training interval
+                        & (  # pure exploration phase ended
+                            config["CONNECTIVITY"] == "dynamic"
+                        )  # training interval
 
                 )
                 return  value
@@ -333,6 +336,9 @@ def make_train(config):
                         )
                         & (  # pure exploration phase ended
                             train_state.timesteps == train_state.visiting + config["VISIT_DURATION"]
+                        )  # training interval
+                        & (  # pure exploration phase ended
+                                config["CONNECTIVITY"] == "dynamic"
                         )  # training interval
                 )
                 return  value
@@ -361,7 +367,7 @@ def make_train(config):
                 prev_neighbors = train_state.neighbors # just for keeping
 
                 # new neighbors of agent about to a visit
-                second_neighbor = train_state.neighbors[to_visit][0][0]
+                second_neighbor = train_state.neighbors[to_visit][0]
                 new_neighbors = jnp.concatenate([jnp.array([second_neighbor]), jnp.array([to_visit])], axis=0)
                 updated_neighbors = prev_neighbors.at[agent_id].set(new_neighbors)
 
@@ -394,17 +400,18 @@ def make_train(config):
 
 
             # implement visits
-            is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group)
-            agents = jnp.arange(config["NUM_AGENTS"])
-            _rng, visit_key = jax.random.split(_rng)
-            to_visit = jax.random.choice(visit_key, agents)
-            _rng, visit_key = jax.random.split(_rng)
-            visitor_id = jax.random.choice(visit_key, agents)
-            train_state = _check_visit(is_visit_time[0], train_state, visitor_id, to_visit)
-            #train_state = train_state.replace(visiting=is_visit_time[0])
+            if config["CONNECTIVITY"] == "dynamic":
+                is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group)
+                agents = jnp.arange(config["NUM_AGENTS"])
+                _rng, visit_key = jax.random.split(_rng)
+                to_visit = jax.random.choice(visit_key, agents)
+                _rng, visit_key = jax.random.split(_rng)
+                visitor_id = jax.random.choice(visit_key, agents)
+                train_state = _check_visit(is_visit_time[0], train_state, visitor_id, to_visit)
+                #train_state = train_state.replace(visiting=is_visit_time[0])
 
-            is_return_time = jax.vmap(is_return_time)(buffer_state, train_state, _rng_group)
-            train_state = _return_visit(is_return_time[0], train_state)
+                is_return_time = jax.vmap(is_return_time)(buffer_state, train_state, _rng_group)
+                train_state = _return_visit(is_return_time[0], train_state)
 
             #train_state = jax.vmap(_check_visit, in_axes=(0, None,0,0))(is_visit_time, train_state, _rng_group, agent_ids)
 
@@ -483,7 +490,7 @@ def init_connectivity(config):
         initial_graph = []
         for idx, el in enumerate(neighbors):
             el.remove(idx)
-            initial_graph.append(el)
+            initial_graph.append(el )
 
     elif config["CONNECTIVITY"] == "dynamic":
         config["NUM_NEIGHBORS"] = 2 # start with one neighbor but due to visits the maximum is two
@@ -499,8 +506,8 @@ def init_connectivity(config):
         initial_graph = []
         for idx, el in enumerate(neighbors):
             el.remove(idx)
-
-            initial_graph.append([el + [-1]]) # -1 means it is an empty neighbor spot
+            el.append(-1)
+            initial_graph.append(el) # -1 means it is an empty neighbor spot
 
         """
         for 
