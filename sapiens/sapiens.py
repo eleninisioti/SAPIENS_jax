@@ -3,6 +3,7 @@ PureJaxRL version of CleanRL's DQN: https://github.com/vwxyzjn/cleanrl/blob/mast
 """
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["AX_TRACEBACK_FILTERING"] = "off"
 
 import jax
 import jax.numpy as jnp
@@ -16,11 +17,9 @@ from flax.training.train_state import TrainState
 from gymnax.wrappers.purerl import FlattenObservationWrapper, LogWrapper
 import gymnax
 import flashbax as fbx
-from flashbax.buffers.trajectory_buffer import TrajectoryBuffer
 import matplotlib.pyplot as plt
 import numpy as onp
-os.environ["AX_TRACEBACK_FILTERING"] = "off"
-
+import argparse
 
 
 class QNetwork(nn.Module):
@@ -51,11 +50,7 @@ class CustomTrainState(TrainState):
     buffer_diversity: float
     neighbors: jnp.array
     keep_neighbors: jnp.array
-
-
-
-
-
+    visiting: bool
 
 
 def make_train(config):
@@ -131,7 +126,8 @@ def make_train(config):
                 target_network_params=jax.tree_map(lambda x: jnp.copy(x), network_params),
                 tx=tx,
                 timesteps=0,
-                keep_neighbors=None,
+                visiting = False,
+                keep_neighbors=jnp.zeros_like(neighbors),
                 n_updates=0,
                 buffer_diversity=0.0,
                 neighbors=neighbors,
@@ -209,34 +205,10 @@ def make_train(config):
                 exp = jax.tree_map(lambda x: x[:,:config["SHARED_BATCH_SIZE"],...], exp)
                 return exp
 
-            #exp = jax.vmap(sample_buffer)(buffer_state)
 
-            def buffer_add_batch(i, carry):
-                buffer_state, train_state, exp = carry
-                i = train_state.neighbors[i]
-                exp_current = jax.tree_map(lambda x: x[i, ...], exp)
-                exp_current = jax.tree_map(lambda x: jnp.expand_dims(x, axis=1), exp_current)
-
-                def add_to_buffer(i, carry):
-                    current_exp = jax.tree_map(lambda x: x[i, ...], exp_current)
-                    return buffer.add(carry, current_exp)
-
-                buffer_state = jax.lax.fori_loop(lower=0, upper=config["BUFFER_SHARE_BATCH_SIZE"],
-                                                 body_fun=add_to_buffer,
-                                                 init_val=buffer_state)
-                return (buffer_state, train_state, exp)
-                # return jax.vmap(buffer.add, in_axes=(None,0))(buffer_state, exp)
-
-            def add_buffer_agent(buffer_state, train_state, exp):
-                # buffest_state =
-                # buffer_state, _, _ = jax.lax.fori_loop(lower=0, upper=config["NUM_NEIGHBORS"], body_fun=buffer_add_batch,
-                #                           init_val=(buffer_state, train_state, exp))
-                # return buffer_state
-                return jax.vmap(buffer_add_batch, in_axes=(None, 0))(buffer_state, exp)
 
             shared_exp = jax.vmap(sample_buffer)(buffer_state, agent_keys)
-            temp = shared_exp.action.shape[0], shared_exp.action.shape[1] * shared_exp.action.shape[2], shared_exp.action.shape[3:]
-            temp2 = shared_exp.obs.shape[0], shared_exp.obs.shape[1] * shared_exp.obs.shape[2], shared_exp.obs.shape[3:]
+
 
             shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
             total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
@@ -245,40 +217,11 @@ def make_train(config):
             #total_exp = timestep
             buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
 
-
-            #buffer_state = jax.vmap(buffer.add, in_axes=(0,0))(buffer_state, timestep)
-
             buffer_states = buffer_state.experience.obs
 
-            #buffer_states = buffer_obs.reshape(buffer_obs.shape[0], buffer_obs.shape[2],buffer_obs.shape[3])
-
             def get_diversity(array):
+                array = array.reshape(-1, array.shape[-1])
                 return jnp.mean(jnp.var(array, axis=0))
-                #temp = jnp.unique(array, axis=0)
-                #return jnp.array([temp.shape[0]])
-
-            result_shape = jax.ShapeDtypeStruct((1,), jnp.int32)
-
-
-
-            #buffer_diversity = pure_callback_with_shape(buffer_states)
-
-
-            """
-            def process_slice(i, carry):
-
-                #carry_value, intermediate_values = carry
-                # Example operation (sum along the second axis)
-                result = carry + jax.pure_callback(get_diversity,  result_shape, buffer_states[i])
-                return result
-
-            # Initial carry value (not used in this example)
-            init_carry = jnp.array([0], dtype=jnp.float32)
-            # Use jax.lax.scan to iterate through the first dimension
-            result = jax.lax.fori_loop(lower=0, upper=config["NUM_AGENTS"], body_fun=process_slice, init_val=init_carry)
-            """
-
-
 
 
             def _compute_diversity(train_state):
@@ -301,7 +244,7 @@ def make_train(config):
                 return  value
 
             rng, _rng = jax.random.split(rng)
-            """
+
             is_diversity_time = jax.vmap(_is_diversity_time)(buffer_state, train_state)
             is_diversity_time = is_diversity_time[0]
 
@@ -315,7 +258,6 @@ def make_train(config):
                 train_state,
                 _rng_group,
             )
-            """
 
 
             # NETWORKS UPDATE
@@ -365,9 +307,8 @@ def make_train(config):
                 return  value
 
 
-
-
             def is_visit_time(buffer_state, train_state, key):
+
                 value = (
                         (buffer.can_sample(buffer_state))
                         & (  # enough experience in buffer
@@ -376,6 +317,10 @@ def make_train(config):
                         & (  # pure exploration phase ended
                                jax.random.uniform(key) < config["PROB_VISIT"]
                         )  # training interval
+                        & (  # pure exploration phase ended
+                                jnp.logical_not(train_state.visiting)
+                        )  # training interval
+
                 )
                 return  value
 
@@ -388,6 +333,9 @@ def make_train(config):
                         )
                         & (  # pure exploration phase ended
                                jax.random.uniform(key) < config["PROB_VISIT"]
+                        )  # training interval
+                        & (  # pure exploration phase ended
+                            jnp.logical_not(train_state.visiting)
                         )  # training interval
                 )
                 return  value
@@ -409,37 +357,59 @@ def make_train(config):
                 _rng_group,
             )
 
-            def _implement_visit(train_state, key, agent_id):
+            def _implement_visit(train_state, agent_id, to_visit):
                 # choose another subgroup
-                agents = jnp.arange(config["NUM_AGENTS"])
-                to_visit = jax.random.choice(key, agents)
 
-                neighbors = train_state.neighbors # just for keeping
+                # current neighbors of agent about to take a visit
+                prev_neighbors = train_state.neighbors # just for keeping
 
-                new_neighbors = jnp.concatenate([train_state.neighbors[to_visit], jnp.array([to_visit])], axis=0)
-                update_neighbors = jnp.concatenate([train_state.neighbors, agent_id ])
-
-                prev_neighbors = train_state.neighbors
+                # new neighbors of agent about to a visit
+                second_neighbor = train_state.neighbors[to_visit][0][0]
+                new_neighbors = jnp.concatenate([jnp.array([second_neighbor]), jnp.array([to_visit])], axis=0)
                 updated_neighbors = prev_neighbors.at[agent_id].set(new_neighbors)
+
+                # new neighbors of agents receiving the agent
+                update_neighbors = jnp.concatenate([jnp.array([second_neighbor]), jnp.array([agent_id]) ],axis=0)
                 updated_neighbors = updated_neighbors.at[to_visit].set(update_neighbors)
-                updated_neighbors = updated_neighbors.at[train_state.neighbors[to_visit]].set(update_neighbors)
+                update_neighbors = jnp.concatenate([jnp.array([to_visit]), jnp.array([agent_id]) ],axis=0)
+                updated_neighbors = updated_neighbors.at[second_neighbor].set(update_neighbors)
 
-
-
-                train_state = train_state._replace(neighbors=updated_neighbors, keep_neighbors=neighbors)
+                train_state = train_state.replace(neighbors=updated_neighbors, keep_neighbors=prev_neighbors,visiting=jnp.ones_like(train_state.visiting))
                 return train_state
 
             def _check_visit(is_visit_time, train_state, key, agent_id):
                 train_state = jax.lax.cond(is_visit_time,
-                                           lambda train_state, key: _implement_visit(train_state, key, agent_id),
-                                           lambda train_state, key: (train_state, jnp.array([0.0] * config["NUM_AGENTS"])))
+                                           lambda train_state, key, agent_id: _implement_visit(train_state, key, agent_id),
+                                           lambda train_state, _, agent_id: train_state, train_state, key, agent_id)
                 return train_state
 
-            agent_ids = jnp.arange(config["NUM_AGENTS"])
 
-            #is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group, agent_ids)
+            def _implement_return(train_state):
+                train_state = train_state.replace(neighbors=train_state.keep_neighbors, visiting=jnp.zeros_like(train_state.visiting))
+                return train_state
 
-            #train_state = jax.vmap(_check_visit)(is_visit_time, train_state, buffer_state, _rng_group)
+
+            def _return_visit(is_return_time, train_state):
+                train_state = jax.lax.cond(is_return_time,
+                                           lambda train_state: _implement_return(train_state),
+                                           lambda train_state: train_state, train_state)
+                return train_state
+
+
+            # implement visits
+            is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group)
+            agents = jnp.arange(config["NUM_AGENTS"])
+            _rng, visit_key = jax.random.split(_rng)
+            to_visit = jax.random.choice(visit_key, agents)
+            _rng, visit_key = jax.random.split(_rng)
+            visitor_id = jax.random.choice(visit_key, agents)
+            train_state = _check_visit(is_visit_time[0], train_state, visitor_id, to_visit)
+            #train_state = train_state.replace(visiting=is_visit_time[0])
+
+            is_return_time = jax.vmap(is_return_time)(buffer_state, train_state, _rng_group)
+            train_state = _return_visit(is_return_time[0], train_state)
+
+            #train_state = jax.vmap(_check_visit, in_axes=(0, None,0,0))(is_visit_time, train_state, _rng_group, agent_ids)
 
             def update_target(train_state):
                 new_state = jax.lax.cond(
@@ -503,7 +473,6 @@ def make_train(config):
         runner_state, metrics = jax.lax.scan(_update_step, runner_state, None, config["NUM_UPDATES"])
 
 
-
         return {"runner_state": runner_state, "metrics": metrics}
 
     return train
@@ -533,7 +502,8 @@ def init_connectivity(config):
         initial_graph = []
         for idx, el in enumerate(neighbors):
             el.remove(idx)
-            initial_graph.append(el)
+
+            initial_graph.append([el + [-1]]) # -1 means it is an empty neighbor spot
 
         """
         for 
@@ -553,10 +523,7 @@ def init_connectivity(config):
 
 
 
-def main(env_name,num_agents):
-
-
-
+def main(env_name ,num_agents, connectivity,trial):
 
 
     config = {
@@ -564,8 +531,8 @@ def main(env_name,num_agents):
         "NUM_AGENTS": num_agents,
         "BUFFER_SIZE": 10000,
         "BUFFER_BATCH_SIZE": 128,
-        "SHARED_BATCH_SIZE": 32,
-        "CONNECTIVITY": "fully",
+        "SHARED_BATCH_SIZE": 5,
+        "CONNECTIVITY": connectivity,
         "TOTAL_TIMESTEPS": 8e5,
         "EPSILON_START": 1.0,
         "EPSILON_FINISH": 0.05,
@@ -580,7 +547,7 @@ def main(env_name,num_agents):
         "GAMMA": 0.99,
         "TAU": 1.0,
         "ENV_NAME": env_name,
-        "SEED": 1,
+        "SEED": trial,
         "NUM_SEEDS": 15,
         "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
@@ -589,11 +556,13 @@ def main(env_name,num_agents):
 
     config = init_connectivity(config)
 
+    project_name = "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
+
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
-        tags=["DQN", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
-        name=f'sapiens_sharing_{config["ENV_NAME"]}_{config["CONNECTIVITY"]}_{config["NUM_AGENTS"]}',
+        tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
+        name=project_name,
         config=config,
         mode=config["WANDB_MODE"],
     )
@@ -602,35 +571,22 @@ def main(env_name,num_agents):
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_vjit = jax.jit(jax.vmap(make_train(config)))
     outs = jax.block_until_ready(train_vjit(rngs))
-
-    save_dir = "projects/dqn/cartpole"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-
-    temp = outs["metrics"]["timesteps"][0].tolist()
-    temp2 = outs["metrics"]["returns"][0].tolist()
-    for i in range(1):
-        plt.plot(outs["metrics"]["timesteps"][i].tolist(),outs["metrics"]["returns"][i].tolist() )
-    plt.xlabel("Update Step")
-    plt.ylabel("Return")
-    plt.savefig(save_dir + "/returns.png")
-    plt.clf()
     wandb.finish()
 
 
-def run_all():
-    #env_name ="CartPole-v1"
-    env_name ="Freeway-MinAtar"
-    #env_name ="MountainCar-v0"
 
-    envs = ["CartPole-v1", "Freeway-MinAtar","MountainCar-v0" ]
-    num_agents_values = [1,5, 10, 20]
-    for env_name in envs:
-        for num_agents in num_agents_values:
-            main(env_name, num_agents)
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0,2"
-    run_all()
+    parser = argparse.ArgumentParser(description="This script demonstrates how to use argparse")
+    parser.add_argument("env", type=str, help="Name of the environment",default="CartPole-v1")
+    parser.add_argument("n_agents", type=int, help="Number of agents",default=10)
+    parser.add_argument("connectivity", type=str, help="Connectivity",default="fully")
+    parser.add_argument("trial", type=int, help="Trial",default=0)
+
+    args = parser.parse_args()
+
+    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial)
+
+
+
