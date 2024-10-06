@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 def write_file(env, num_agents, connectivity, trial):
-    top_dir = "/gpfsscratch/rech/imi/utw61ti/sapiens_log/"
+    top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/"
     current_date = datetime.today().strftime('%Y_%m_%d')
     name = "/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_trial_" + str(trial)
 
