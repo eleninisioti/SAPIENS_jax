@@ -577,10 +577,10 @@ def main(env_name ,num_agents, connectivity,trial):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script demonstrates how to use argparse")
-    parser.add_argument("env", type=str, help="Name of the environment",default="CartPole-v1")
-    parser.add_argument("n_agents", type=int, help="Number of agents",default=10)
-    parser.add_argument("connectivity", type=str, help="Connectivity",default="fully")
-    parser.add_argument("trial", type=int, help="Trial",default=0)
+    parser.add_argument("--env", type=str, help="Name of the environment",default="CartPole-v1")
+    parser.add_argument("--n_agents", type=int, help="Number of agents",default=10)
+    parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
+    parser.add_argument("--trial", type=int, help="Trial",default=0)
 
     args = parser.parse_args()
 
