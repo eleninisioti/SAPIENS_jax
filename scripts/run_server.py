@@ -44,7 +44,8 @@ def run_campaign():
     for env_name in envs:
         for num_agents in num_agents_values:
             for trial in range(10):
-                write_file(env_name, num_agents, trial)
+                for connectivity in ["fully", "dynamic"]:
+                    write_file(env_name, num_agents, connectivity, trial)
 
 
 if __name__ == "__main__":
