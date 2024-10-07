@@ -19,7 +19,7 @@ def write_file(env, num_agents, connectivity, trial):
         file.write("#!/bin/bash"+ "\n")
         job_name = name
         file.write("#SBATCH --job-name=" + job_name + "\n")
-        file.write("#SBATCH -A imi@a100" + "\n")
+        file.write("#SBATCH -A imi@v100" + "\n")
         file.write("#SBATCH --gres=gpu:1 "+ "\n")
         file.write("#SBATCH --time=05:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
