@@ -30,6 +30,8 @@ def write_file(env, num_agents, connectivity, trial):
         file.write("#SBATCH --error=" + top_dir + "jz_logs" + error_file+ "\n")
         file.write("source ~/.bashrc"+ "\n")
         file.write("module load cuda/12.2.0 "+ "\n")
+        file.write("conda activate sapiens "+ "\n")
+
         file.write("")
         command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + " --trial " + str(trial)
         file.write(command+ "\n")
