@@ -29,7 +29,7 @@ def write_file(env, num_agents, connectivity, trial):
         error_file = name  + "%j.err"
         file.write("#SBATCH --error=" + top_dir + "jz_logs" + error_file+ "\n")
         file.write("source ~/.bashrc"+ "\n")
-        file.write("module load cuda/12.2.0 "+ "\n")
+        file.write("module load pytorch-gpu/py3/1.11.0 "+ "\n")
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
