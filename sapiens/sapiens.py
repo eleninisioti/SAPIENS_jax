@@ -2,8 +2,7 @@
 PureJaxRL version of CleanRL's DQN: https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_jax.py
 """
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["AX_TRACEBACK_FILTERING"] = "off"
+
 
 import jax
 import jax.numpy as jnp
@@ -569,7 +568,7 @@ def main(env_name ,num_agents, connectivity,trial):
         tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
         name=project_name,
         config=config,
-        mode=config["WANDB_MODE"],
+        mode="offline"
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
