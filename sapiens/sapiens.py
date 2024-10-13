@@ -639,7 +639,7 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
         "ENV_NAME": env_name,
         "SEED": trial,
         "NUM_SEEDS": 15,
-        "WANDB_MODE": "offline",  # set to online to activate wandb
+        "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
         "PROJECT": "sapiens",
         "project_name": project_name,
