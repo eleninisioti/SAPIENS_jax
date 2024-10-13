@@ -1,0 +1,62 @@
+2024-10-06 21:36:33,286 INFO    StreamThr :6719 [internal.py:wandb_internal():85] W&B internal server running at pid: 6719, started at: 2024-10-06 21:36:33.285916
+2024-10-06 21:36:33,286 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: status
+2024-10-06 21:36:33,294 INFO    WriterThread:6719 [datastore.py:open_for_write():87] open: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/run-8gbakdyq.wandb
+2024-10-06 21:36:33,295 DEBUG   SenderThread:6719 [sender.py:send():379] send: header
+2024-10-06 21:36:33,313 DEBUG   SenderThread:6719 [sender.py:send():379] send: run
+2024-10-06 21:36:34,282 INFO    SenderThread:6719 [dir_watcher.py:__init__():211] watching files in: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files
+2024-10-06 21:36:34,282 INFO    SenderThread:6719 [sender.py:_start_run_threads():1188] run started: 8gbakdyq with start time 1728243393.287671
+2024-10-06 21:36:34,292 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: check_version
+2024-10-06 21:36:34,292 DEBUG   SenderThread:6719 [sender.py:send_request():406] send_request: check_version
+2024-10-06 21:36:35,035 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: run_start
+2024-10-06 21:36:35,041 DEBUG   HandlerThread:6719 [system_info.py:__init__():26] System info init
+2024-10-06 21:36:35,041 DEBUG   HandlerThread:6719 [system_info.py:__init__():41] System info init done
+2024-10-06 21:36:35,041 INFO    HandlerThread:6719 [system_monitor.py:start():194] Starting system monitor
+2024-10-06 21:36:35,041 INFO    SystemMonitor:6719 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-10-06 21:36:35,041 INFO    HandlerThread:6719 [system_monitor.py:probe():214] Collecting system info
+2024-10-06 21:36:35,042 INFO    SystemMonitor:6719 [interfaces.py:start():188] Started cpu monitoring
+2024-10-06 21:36:35,042 INFO    SystemMonitor:6719 [interfaces.py:start():188] Started disk monitoring
+2024-10-06 21:36:35,046 INFO    SystemMonitor:6719 [interfaces.py:start():188] Started gpuapple monitoring
+2024-10-06 21:36:35,047 INFO    SystemMonitor:6719 [interfaces.py:start():188] Started memory monitoring
+2024-10-06 21:36:35,047 INFO    SystemMonitor:6719 [interfaces.py:start():188] Started network monitoring
+2024-10-06 21:36:35,333 DEBUG   HandlerThread:6719 [system_info.py:probe():152] Probing system
+2024-10-06 21:36:35,337 DEBUG   HandlerThread:6719 [system_info.py:_probe_git():137] Probing git
+2024-10-06 21:36:35,360 DEBUG   HandlerThread:6719 [system_info.py:_probe_git():145] Probing git done
+2024-10-06 21:36:35,360 DEBUG   HandlerThread:6719 [system_info.py:probe():200] Probing system done
+2024-10-06 21:36:35,360 DEBUG   HandlerThread:6719 [system_monitor.py:probe():223] {'os': 'macOS-13.0-arm64-arm-64bit', 'python': '3.11.0', 'heartbeatAt': '2024-10-06T19:36:35.333740', 'startedAt': '2024-10-06T19:36:33.279464', 'docker': None, 'cuda': None, 'args': ('--env', 'CartPole-v1', '--n_agents', '20', '--connectivity', 'dynamic', '--trial', '0'), 'state': 'running', 'program': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py', 'codePathLocal': 'sapiens.py', 'codePath': 'sapiens/sapiens.py', 'git': {'remote': 'https://github.com/eleninisioti/SAPIENS_jax.git', 'commit': 'e7a3523b34456b4c1faaf2375653935068b0cad8'}, 'email': 'elennisioti@gmail.com', 'root': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax', 'host': 'Elenis-MacBook-Pro.local', 'username': 'enis', 'executable': '/Users/enis/miniconda3/envs/GrowAI_framework/bin/python3.11', 'cpu_count': 12, 'cpu_count_logical': 12, 'cpu_freq': {'current': 3504, 'min': 702, 'max': 3504}, 'cpu_freq_per_core': [{'current': 3504, 'min': 702, 'max': 3504}], 'disk': {'/': {'total': 926.3517189025879, 'used': 12.26644515991211}}, 'gpuapple': {'type': 'Apple M2 Pro', 'vendor': 'sppci_vendor_Apple'}, 'memory': {'total': 16.0}}
+2024-10-06 21:36:35,360 INFO    HandlerThread:6719 [system_monitor.py:probe():224] Finished collecting system info
+2024-10-06 21:36:35,360 INFO    HandlerThread:6719 [system_monitor.py:probe():227] Publishing system info
+2024-10-06 21:36:35,360 DEBUG   HandlerThread:6719 [system_info.py:_save_conda():209] Saving list of conda packages installed into the current environment
+2024-10-06 21:36:36,293 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/conda-environment.yaml
+2024-10-06 21:36:36,637 DEBUG   HandlerThread:6719 [system_info.py:_save_conda():224] Saving conda packages done
+2024-10-06 21:36:36,638 INFO    HandlerThread:6719 [system_monitor.py:probe():229] Finished publishing system info
+2024-10-06 21:36:36,640 DEBUG   SenderThread:6719 [sender.py:send():379] send: files
+2024-10-06 21:36:36,640 INFO    SenderThread:6719 [sender.py:_save_file():1454] saving file wandb-metadata.json with policy now
+2024-10-06 21:36:36,747 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: python_packages
+2024-10-06 21:36:36,747 DEBUG   SenderThread:6719 [sender.py:send_request():406] send_request: python_packages
+2024-10-06 21:36:36,749 DEBUG   SenderThread:6719 [sender.py:send():379] send: telemetry
+2024-10-06 21:36:36,749 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: stop_status
+2024-10-06 21:36:36,749 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:36,749 DEBUG   SenderThread:6719 [sender.py:send_request():406] send_request: stop_status
+2024-10-06 21:36:37,296 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/conda-environment.yaml
+2024-10-06 21:36:37,296 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/requirements.txt
+2024-10-06 21:36:37,296 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/wandb-metadata.json
+2024-10-06 21:36:37,751 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:38,301 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/output.log
+2024-10-06 21:36:38,305 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: status_report
+2024-10-06 21:36:38,694 INFO    wandb-upload_0:6719 [upload_job.py:push():130] Uploaded file /var/folders/9v/m9sfgs4x2wq8b_j6xpzf9cjr0000gn/T/tmpyif582miwandb/grtdzesk-wandb-metadata.json
+2024-10-06 21:36:38,752 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:39,307 INFO    Thread-12 :6719 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241006_213633-8gbakdyq/files/output.log
+2024-10-06 21:36:39,754 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:40,758 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:41,763 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:42,768 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:43,759 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: status_report
+2024-10-06 21:36:43,769 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:44,771 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:45,775 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:46,777 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:47,780 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:48,762 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: status_report
+2024-10-06 21:36:48,781 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:49,786 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages
+2024-10-06 21:36:50,791 DEBUG   HandlerThread:6719 [handler.py:handle_request():158] handle_request: internal_messages

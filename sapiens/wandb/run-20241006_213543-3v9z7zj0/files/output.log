@@ -1,0 +1,134 @@
+/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/flashbax/buffers/trajectory_buffer.py:473: UserWarning: Setting max_size dynamically sets the `max_length_time_axis` to be `max_size`//`add_batch_size = 217`.This allows one to control exactly how many timesteps are stored in the buffer.Note that this overrides the `max_length_time_axis` argument.
+  warnings.warn(
+/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/numpy/array_methods.py:69: UserWarning: Explicitly requested dtype <class 'jax.numpy.int64'> requested in astype is not available, and will be truncated to dtype int32. To enable more dtypes, set the jax_enable_x64 configuration option or the JAX_ENABLE_X64 shell environment variable. See https://github.com/google/jax#current-gotchas for more.
+  return lax_numpy.astype(arr, dtype, copy=copy, device=device)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:126: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  target_network_params=jax.tree_map(lambda x: jnp.copy(x), network_params),
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:197: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  timestep = jax.tree_map(lambda x: jnp.expand_dims(x,1), timestep)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:205: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  exp = jax.tree_map(lambda x: x[:,:config["SHARED_BATCH_SIZE"],...], exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:213: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:214: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
+Traceback (most recent call last):
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 593, in <module>
+    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial)
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 577, in main
+    outs = jax.block_until_ready(train_vjit(rngs))
+                                 ^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 180, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/pjit.py", line 332, in cache_miss
+    outs, out_flat, out_tree, args_flat, jaxpr, attrs_tracked = _python_pjit_helper(
+                                                                ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/pjit.py", line 180, in _python_pjit_helper
+    p, args_flat = _infer_params(fun, jit_info, args, kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/pjit.py", line 736, in _infer_params
+    p, args_flat = _infer_params_impl(
+                   ^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/pjit.py", line 633, in _infer_params_impl
+    jaxpr, consts, out_avals, attrs_tracked = _create_pjit_jaxpr(
+                                              ^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/linear_util.py", line 352, in memoized_fun
+    ans = call(fun, *args)
+          ^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/pjit.py", line 1277, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts, attrs_tracked = pe.trace_to_jaxpr_dynamic(
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2355, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts, attrs_tracked = trace_to_subjaxpr_dynamic(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2378, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/linear_util.py", line 193, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 180, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/api.py", line 1225, in vmap_f
+    out_flat = batching.batch(
+               ^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/linear_util.py", line 193, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 476, in train
+    runner_state, metrics = jax.lax.scan(_update_step, runner_state, None, config["NUM_UPDATES"])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 180, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/loops.py", line 280, in scan
+    init_flat, carry_avals, carry_avals_out, init_tree, *rest = _create_jaxpr(init)
+                                                                ^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/loops.py", line 265, in _create_jaxpr
+    jaxpr, consts, out_tree, attrs_tracked = _initial_style_jaxpr_attrs(
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/common.py", line 74, in _initial_style_jaxpr_attrs
+    jaxpr, consts, out_tree, attrs_tracked = _initial_style_open_jaxpr(
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/common.py", line 60, in _initial_style_open_jaxpr
+    jaxpr, _, consts, attrs_tracked = pe.trace_to_jaxpr_dynamic(
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2355, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts, attrs_tracked = trace_to_subjaxpr_dynamic(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2378, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/linear_util.py", line 193, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 409, in _update_step
+    train_state = _check_visit(is_visit_time[0], train_state, visitor_id, to_visit)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 384, in _check_visit
+    train_state = jax.lax.cond(is_visit_time,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 180, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/conditionals.py", line 306, in cond
+    return _cond(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/conditionals.py", line 238, in _cond
+    jaxprs, consts, out_trees = _initial_style_jaxprs_with_common_consts(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/common.py", line 88, in _initial_style_jaxprs_with_common_consts
+    jaxpr_data = [_initial_style_open_jaxpr(fn, in_tree, in_avals, primitive_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/common.py", line 88, in <listcomp>
+    jaxpr_data = [_initial_style_open_jaxpr(fn, in_tree, in_avals, primitive_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/lax/control_flow/common.py", line 60, in _initial_style_open_jaxpr
+    jaxpr, _, consts, attrs_tracked = pe.trace_to_jaxpr_dynamic(
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/profiler.py", line 336, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2355, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts, attrs_tracked = trace_to_subjaxpr_dynamic(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/interpreters/partial_eval.py", line 2378, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/linear_util.py", line 193, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 385, in <lambda>
+    lambda train_state, key, agent_id: _implement_visit(train_state, key, agent_id),
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py", line 370, in _implement_visit
+    second_neighbor = train_state.neighbors[to_visit][0][0]
+                      ^^^^^^^^^^^

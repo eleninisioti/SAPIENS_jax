@@ -19,8 +19,8 @@ import flashbax as fbx
 import matplotlib.pyplot as plt
 import numpy as onp
 import argparse
-
-
+import pickle
+from gymnax.visualize import Visualizer
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -216,7 +216,7 @@ def make_train(config):
             #total_exp = timestep
             buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
 
-            buffer_states = buffer_state.experience.obs
+            buffer_obs = buffer_state.experience.obs
 
             def get_diversity(array):
                 array = array.reshape(-1, array.shape[-1])
@@ -224,7 +224,7 @@ def make_train(config):
 
 
             def _compute_diversity(train_state):
-                diversity =jax.vmap(get_diversity)(buffer_states)
+                diversity =jax.vmap(get_diversity)(buffer_obs)
 
                 train_state = train_state.replace(buffer_diversity=diversity)
                 return train_state
@@ -233,14 +233,16 @@ def make_train(config):
             def _is_diversity_time(buffer_state, train_state):
                 value = (
                         (buffer.can_sample(buffer_state))
-                        & (  # enough experience in buffer
+                        &
+                        (  # enough experience in buffer
                                 train_state.timesteps > config["LEARNING_STARTS"]
                         )
                         & (  # pure exploration phase ended
                                 train_state.timesteps % config["DIVERSITY_INTERVAL"] == 0
                         )  # training interval
                 )
-                return  value
+                #value = True
+                return value
 
             rng, _rng = jax.random.split(rng)
 
@@ -525,12 +527,87 @@ def init_connectivity(config):
     return config
 
 
+def evaluate(train_state, config, train_seed):
+    """ Evaluates a trained policy
+    """
+    if config["local_mode"]:
+        top_dir = "projects/"
+    else:
+        top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/projects"
 
-def main(env_name ,num_agents, connectivity,trial):
 
+    mean_rewards = []
+    max_rewards = []
+    for trial in range(config["num_eval_trials"]):
+
+
+
+        key = jax.random.PRNGKey(trial)
+
+        basic_env, env_params = gymnax.make(config["ENV_NAME"])
+        env = FlattenObservationWrapper(basic_env)
+        env = LogWrapper(env)
+
+        network = QNetwork(action_dim=env.action_space(env_params).n)
+        agent_rewards = []
+
+        for agent in range(config["NUM_AGENTS"]):
+
+            save_dir = top_dir + config["project_name"] + "/visuals/train_seed_" + str(train_seed) + "/trial_" + str(trial) + "/agent_" + str(agent)
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+
+            key, agent_key = jax.random.split(key)
+
+            agent_params = jax.tree_map(lambda x: x[agent], train_state.params)
+            last_obs, env_state = env.reset(agent_key)
+
+            done = False
+            ep_reward = []
+            state_seq = []
+            while not done:
+                state_seq.append(env_state.env_state)
+
+                q_vals = network.apply(agent_params, last_obs)
+                action = jnp.argmax(q_vals, axis=-1)  # get the greedy actions
+
+                key, key_act = jax.random.split(key)
+                last_obs, env_state, reward, done, info = env.step(key_act, env_state, action)
+                ep_reward.append(float(reward))
+            agent_rewards.append(onp.sum(ep_reward))
+
+            with open(save_dir + "/rewards.txt", "a") as f:
+                f.write(str(ep_reward) + ",\n")
+
+            with open(save_dir + "/traj.pkl", "wb") as f:
+                pickle.dump([env, env_params, state_seq, ep_reward], f)
+
+            #vis = Visualizer(env, env_params, state_seq, ep_reward)
+            #vis.animate(save_dir + "/anim.gif")
+        mean_rewards.append(onp.mean(agent_rewards))
+        max_rewards.append(onp.max(agent_rewards))
+
+    with open(save_dir + "/mean_mean_rewards.txt", "a") as f:
+        f.write(onp.mean(mean_rewards) + ",\n")
+
+    with open(save_dir + "/var_mean_rewards.txt", "a") as f:
+        f.write( onp.var(mean_rewards)+ ",\n")
+
+    with open(save_dir + "/mean_max_rewards.txt", "a") as f:
+        f.write(onp.mean(max_rewards) + ",\n")
+
+    with open(save_dir + "/var_max_rewards.txt", "a") as f:
+        f.write(onp.var(max_rewards) + ",\n")
+
+    return onp.mean(mean_rewards), onp.var(mean_rewards), onp.mean(max_rewards), onp.var(max_rewards)
+
+
+
+def main(env_name , num_agents, connectivity,trial, local_mode=False):
+
+    project_name = "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
 
     config = {
-
         "NUM_AGENTS": num_agents,
         "BUFFER_SIZE": 10000,
         "BUFFER_BATCH_SIZE": 128,
@@ -556,11 +633,13 @@ def main(env_name ,num_agents, connectivity,trial):
         "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
         "PROJECT": "sapiens",
+        "project_name": project_name,
+        "num_eval_trials": 100,
+        "local_mode": local_mode # if True, evaluation data will be saved locally, otherwise under server SCRATCH
     }
 
     config = init_connectivity(config)
 
-    project_name = "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
 
     wandb.init(
         entity=config["ENTITY"],
@@ -568,13 +647,38 @@ def main(env_name ,num_agents, connectivity,trial):
         tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
         name=project_name,
         config=config,
-        mode="offline"
+        mode="online"
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_vjit = jax.jit(jax.vmap(make_train(config)))
     outs = jax.block_until_ready(train_vjit(rngs))
+
+    eval_info =[]
+    for train_seed in range(config["NUM_SEEDS"]):
+        train_info = jax.tree_map(lambda x: x[train_seed], outs["runner_state"][0])
+
+        eval_info.append(evaluate(train_info, config, train_seed=train_seed))
+
+    mean_mean = onp.mean([el[0] for el in eval_info])
+    var_mean = onp.var([el[1] for el in eval_info])
+    mean_max = onp.mean([el[2] for el in eval_info])
+    var_max = onp.var([el[3] for el in eval_info])
+
+
+    with open(config["project_dir"] + "/info.txt", "w") as f:
+
+        f.write("Mean of mean group performance " + str(mean_mean))
+        f.write("Var of mean group performance " + str(var_mean))
+        f.write("Mean of max group performance " + str(mean_max))
+        f.write("Var of max group performance " + str(var_max))
+
+
+
+
+    #with open(project_dir + "/policy.pkl", "wb") as f:
+    #    pickle.dump(outs["runner_state"][0], f)
     wandb.finish()
 
 
@@ -587,10 +691,12 @@ if __name__ == "__main__":
     parser.add_argument("--n_agents", type=int, help="Number of agents",default=10)
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
     parser.add_argument("--trial", type=int, help="Trial",default=0)
+    parser.add_argument("--local_mode", action='store_true')
+
 
     args = parser.parse_args()
 
-    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial)
+    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial, local_mode=args.local_mode)
 
 
 

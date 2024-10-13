@@ -1,0 +1,5 @@
+2024-10-04 14:02:35,368 INFO    StreamThr :54513 [internal.py:wandb_internal():85] W&B internal server running at pid: 54513, started at: 2024-10-04 14:02:35.367513
+2024-10-04 14:02:35,369 DEBUG   HandlerThread:54513 [handler.py:handle_request():158] handle_request: status
+2024-10-04 14:02:35,375 INFO    WriterThread:54513 [datastore.py:open_for_write():87] open: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241004_140235-8ld5xzx6/run-8ld5xzx6.wandb
+2024-10-04 14:02:35,376 DEBUG   SenderThread:54513 [sender.py:send():379] send: header
+2024-10-04 14:02:35,395 DEBUG   SenderThread:54513 [sender.py:send():379] send: run
