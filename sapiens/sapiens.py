@@ -640,6 +640,11 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
 
     config = init_connectivity(config)
 
+    if local_mode:
+        wandb_mode = "online"
+    else:
+        wandb_mode = "offline"
+
 
     wandb.init(
         entity=config["ENTITY"],
@@ -647,7 +652,7 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
         tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
         name=project_name,
         config=config,
-        mode="online"
+        mode=wandb_mode
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
