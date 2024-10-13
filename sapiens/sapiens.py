@@ -61,7 +61,7 @@ def make_train(config):
     basic_env, env_params = gymnax.make(config["ENV_NAME"])
     env = FlattenObservationWrapper(basic_env)
     env = LogWrapper(env)
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     vmap_reset = lambda n_envs: lambda rng: jax.vmap(env.reset, in_axes=(0, None))(
         jax.random.split(rng, n_envs), env_params
@@ -582,8 +582,10 @@ def evaluate(train_state, config, train_seed):
             with open(save_dir + "/traj.pkl", "wb") as f:
                 pickle.dump([env, env_params, state_seq, ep_reward], f)
 
-            #vis = Visualizer(env, env_params, state_seq, ep_reward)
-            #vis.animate(save_dir + "/anim.gif")
+            if config["local_mode"]:
+                vis = Visualizer(env, env_params, state_seq, ep_reward)
+                vis.animate(save_dir + "/anim.gif")
+
         mean_rewards.append(onp.mean(agent_rewards))
         max_rewards.append(onp.max(agent_rewards))
 
