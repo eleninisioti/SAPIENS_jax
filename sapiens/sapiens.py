@@ -590,16 +590,16 @@ def evaluate(train_state, config, train_seed):
         max_rewards.append(onp.max(agent_rewards))
 
     with open(save_dir + "/mean_mean_rewards.txt", "a") as f:
-        f.write(onp.mean(mean_rewards) + ",\n")
+        f.write(str(onp.mean(mean_rewards)) + ",\n")
 
     with open(save_dir + "/var_mean_rewards.txt", "a") as f:
-        f.write( onp.var(mean_rewards)+ ",\n")
+        f.write( str(onp.var(mean_rewards))+ ",\n")
 
     with open(save_dir + "/mean_max_rewards.txt", "a") as f:
-        f.write(onp.mean(max_rewards) + ",\n")
+        f.write(str(onp.mean(max_rewards)) + ",\n")
 
     with open(save_dir + "/var_max_rewards.txt", "a") as f:
-        f.write(onp.var(max_rewards) + ",\n")
+        f.write(str(onp.var(max_rewards)) + ",\n")
 
     return onp.mean(mean_rewards), onp.var(mean_rewards), onp.mean(max_rewards), onp.var(max_rewards)
 
@@ -615,7 +615,7 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
         "BUFFER_BATCH_SIZE": 128,
         "SHARED_BATCH_SIZE": 5,
         "CONNECTIVITY": connectivity,
-        "TOTAL_TIMESTEPS": 8e5,
+        "TOTAL_TIMESTEPS": 8e3,
         "EPSILON_START": 1.0,
         "EPSILON_FINISH": 0.05,
         "EPSILON_ANNEAL_TIME": 25e4,
