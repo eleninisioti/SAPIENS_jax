@@ -533,7 +533,7 @@ def evaluate(train_state, config, train_seed):
     if config["local_mode"]:
         top_dir = "projects/"
     else:
-        top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/projects"
+        top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/projects/"
 
 
     mean_rewards = []
@@ -609,13 +609,20 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
 
     project_name = "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
 
+
+    total_timesteps = {"CartPole-v1": 8e5,
+                       "MountainCar-v0": 8e5,
+                       "Freeway-MinAtar": 8e6,
+
+                       }
+
     config = {
         "NUM_AGENTS": num_agents,
         "BUFFER_SIZE": 10000,
         "BUFFER_BATCH_SIZE": 128,
         "SHARED_BATCH_SIZE": 5,
         "CONNECTIVITY": connectivity,
-        "TOTAL_TIMESTEPS": 8e3,
+        "TOTAL_TIMESTEPS": total_timesteps[env_name],
         "EPSILON_START": 1.0,
         "EPSILON_FINISH": 0.05,
         "EPSILON_ANNEAL_TIME": 25e4,
