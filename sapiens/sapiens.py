@@ -2,11 +2,10 @@
 PureJaxRL version of CleanRL's DQN: https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/dqn_jax.py
 """
 import os
-
+from datetime import datetime
 
 import jax
 import jax.numpy as jnp
-
 import chex
 import flax
 import wandb
@@ -21,6 +20,7 @@ import numpy as onp
 import argparse
 import pickle
 from gymnax.visualize import Visualizer
+import yaml
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -484,44 +484,47 @@ def make_train(config):
 
 
 def init_connectivity(config):
-    if config["CONNECTIVITY"] == "fully":
-        config["NUM_NEIGHBORS"] = config["NUM_AGENTS"]-1
+    if config["NUM_AGENTS"] >1:
+        if config["CONNECTIVITY"] == "fully":
+            config["NUM_NEIGHBORS"] = config["NUM_AGENTS"]-1
 
-        neighbors = [onp.arange(config["NUM_AGENTS"]).tolist() for _ in range(config["NUM_AGENTS"])]
-        initial_graph = []
-        for idx, el in enumerate(neighbors):
-            el.remove(idx)
-            initial_graph.append(el )
+            neighbors = [onp.arange(config["NUM_AGENTS"]).tolist() for _ in range(config["NUM_AGENTS"])]
+            initial_graph = []
+            for idx, el in enumerate(neighbors):
+                el.remove(idx)
+                initial_graph.append(el )
 
-    elif config["CONNECTIVITY"] == "dynamic":
-        config["NUM_NEIGHBORS"] = 2 # start with one neighbor but due to visits the maximum is two
+        elif config["CONNECTIVITY"] == "dynamic":
+            config["NUM_NEIGHBORS"] = 2 # start with one neighbor but due to visits the maximum is two
 
-        group_id = 0
-        neighbors = []
-        for i in range(config["NUM_AGENTS"]):
-            neighbors.append([group_id, group_id+1])
+            group_id = 0
+            neighbors = []
+            for i in range(config["NUM_AGENTS"]):
+                neighbors.append([group_id, group_id+1])
 
-            if i%2 == 1:
-                group_id +=2
+                if i%2 == 1:
+                    group_id +=2
 
-        initial_graph = []
-        for idx, el in enumerate(neighbors):
-            el.remove(idx)
-            el.append(-1)
-            initial_graph.append(el) # -1 means it is an empty neighbor spot
+            initial_graph = []
+            for idx, el in enumerate(neighbors):
+                el.remove(idx)
+                el.append(-1)
+                initial_graph.append(el) # -1 means it is an empty neighbor spot
 
-        """
-        for 
-
-
-        def connect_fully(agent_id):
-            mask = jnp.arange(config["NUM_NEIGHBORS"]) != agent_id  # Create a mask for all indices except `idx`
-            neighbors= jnp.arange(config["NUM_NEIGHBORS"])
-            neighbors = neighbors[mask]
-            return neighbors
-        agent_ids = jnp.arange(config["NUM_AGENTS"])
-        initial_graph = jax.vmap(connect_fully)(agent_ids)
-        """
+            """
+            for 
+    
+    
+            def connect_fully(agent_id):
+                mask = jnp.arange(config["NUM_NEIGHBORS"]) != agent_id  # Create a mask for all indices except `idx`
+                neighbors= jnp.arange(config["NUM_NEIGHBORS"])
+                neighbors = neighbors[mask]
+                return neighbors
+            agent_ids = jnp.arange(config["NUM_AGENTS"])
+            initial_graph = jax.vmap(connect_fully)(agent_ids)
+            """
+    else:
+        initial_graph = jnp.array([ ]*20)
     config["initial_graph"] = jnp.array(initial_graph)
 
     return config
@@ -605,9 +608,10 @@ def evaluate(train_state, config, train_seed):
 
 
 
-def main(env_name , num_agents, connectivity,trial, local_mode=False):
+def main(env_name , num_agents, connectivity, trial, local_mode=False):
 
-    project_name = "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
+    project_name = + datetime.today().strftime(
+        '%Y_%m_%d') + "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
 
 
     total_timesteps = {"CartPole-v1": 8e5,
@@ -638,9 +642,10 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
         "TAU": 1.0,
         "ENV_NAME": env_name,
         "SEED": trial,
-        "NUM_SEEDS": 15,
+        "NUM_SEEDS": 1,
         "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
+        "project_dir": "projects/" + project_name,
         "PROJECT": "sapiens",
         "project_name": project_name,
         "num_eval_trials": 100,
@@ -649,12 +654,18 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
 
     config = init_connectivity(config)
 
+    with open(config["project_dir"] + "/config.yaml", "r") as f:
+        yaml.dump(config, f)
+
     if local_mode:
         wandb_mode = "online"
 
     else:
         wandb_mode = "offline"
         os.environ['WANDB_DIR'] = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
+
+
+
 
 
     wandb.init(
@@ -670,6 +681,9 @@ def main(env_name , num_agents, connectivity,trial, local_mode=False):
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_vjit = jax.jit(jax.vmap(make_train(config)))
     outs = jax.block_until_ready(train_vjit(rngs))
+
+    with open(config["project_dir"] + "/train_outs.pkl", "wb") as f:
+        pickle.dump(outs)
 
     eval_info =[]
     for train_seed in range(config["NUM_SEEDS"]):
@@ -705,14 +719,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="This script demonstrates how to use argparse")
     parser.add_argument("--env", type=str, help="Name of the environment",default="CartPole-v1")
     parser.add_argument("--n_agents", type=int, help="Number of agents",default=10)
+    parser.add_argument("--trial", type=int, help="Number of agents",default=1)
+
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
-    parser.add_argument("--trial", type=int, help="Trial",default=0)
     parser.add_argument("--local_mode", action='store_true')
 
 
     args = parser.parse_args()
 
-    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial, local_mode=args.local_mode)
+    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial,  local_mode=args.local_mode)
 
 
 

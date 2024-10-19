@@ -23,7 +23,6 @@ def write_file(env, num_agents, connectivity, trial):
         file.write("#SBATCH --gres=gpu:1 "+ "\n")
         file.write("#SBATCH --time=05:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
-
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
         error_file = name  + "%j.err"
@@ -38,9 +37,7 @@ def write_file(env, num_agents, connectivity, trial):
 
 
 def run_campaign():
-
-
-    envs = ["CartPole-v1", "Freeway-MinAtar", "MountainCar-v0" ]
+    envs = ["Freeway-MinAtar"]
     num_agents_values = [1, 5, 10, 20]
     for env_name in envs:
         for num_agents in num_agents_values:
