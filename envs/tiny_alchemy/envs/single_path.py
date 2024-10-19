@@ -5,7 +5,7 @@ from gymnax.environments import environment, spaces
 from typing import Tuple, Optional
 import chex
 from flax import struct
-from tiny_alchemy.envs.base import Base
+from envs.tiny_alchemy.envs.base import Base
 
 @struct.dataclass
 class EnvState:
@@ -78,11 +78,13 @@ class Singlepath(Base):
     ) -> spaces.Discrete:
         """Action space of the environment."""
         num_items = params.n_total_items # actually this is plus the init items
-        return spaces.Box(low=0, high=num_items, shape=(1,), dtype=jnp.int32)
+        return spaces.Discrete(num_items)
 
     def observation_space(self, params: EnvParams) -> spaces.Box:
         """Observation space of the environment."""
-        return spaces.Box(low=0,high=params.n_total_items,shape=(1+params.n_total_items),dtype=jnp.int32)
+        num_items = params.n_total_items # actually this is plus the init items
+
+        return spaces.MultiDiscrete([num_items]*(1+params.n_total_items))
 
     def state_space(self, params: EnvParams) -> spaces.Dict:
         """State space of the environment."""

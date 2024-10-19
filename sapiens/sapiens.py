@@ -21,6 +21,8 @@ import argparse
 import pickle
 from gymnax.visualize import Visualizer
 import yaml
+from envs.tiny_alchemy import envs as alchemy_envs
+
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -58,7 +60,15 @@ def make_train(config):
 
     # we create the group
 
-    basic_env, env_params = gymnax.make(config["ENV_NAME"])
+    if "alchemy" in config["ENV_NAME"]:
+
+        # we create the group
+        basic_env = alchemy_envs.get_environment(config["ENV_NAME"])
+        env_params = basic_env.default_params
+
+    else:
+        basic_env, env_params = gymnax.make(config["ENV_NAME"])
+
     env = FlattenObservationWrapper(basic_env)
     env = LogWrapper(env)
     #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -524,6 +534,8 @@ def init_connectivity(config):
             initial_graph = jax.vmap(connect_fully)(agent_ids)
             """
     else:
+        config["NUM_NEIGHBORS"] = 0  # start with one neighbor but due to visits the maximum is two
+
         initial_graph = jnp.array([ ]*20)
     config["initial_graph"] = jnp.array(initial_graph)
 

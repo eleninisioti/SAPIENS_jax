@@ -1,5 +1,5 @@
-from tiny_alchemy.envs import single_path
-from tiny_alchemy.envs.base import Base
+from envs.tiny_alchemy.envs import single_path
+from envs.tiny_alchemy.envs.base import Base
 
 _envs = {"Single-path-alchemy": single_path.Singlepath
 
