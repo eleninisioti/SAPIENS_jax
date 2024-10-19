@@ -72,7 +72,7 @@ class Base(environment.Environment):
         new_items = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), new_items, state.items)
 
         reward = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), 1.0, 0.0)
-        reward = jnp.where(prev_terminal, 0, reward)
+        reward = jnp.where(prev_terminal, 0, reward)[0]
 
 
         new_held_item= jnp.where(state.held_item==999, action, 999)
@@ -105,8 +105,9 @@ class Base(environment.Environment):
 
     def get_obs(self, state: EnvState) -> chex.Array:
         """Applies observation function to state."""
-
-        return jnp.concatenate([jnp.reshape(jnp.array(state.held_item),(1,)), state.items], axis=0)
+        #items = jnp.where(state.items, 1.0, 0.0)
+        held_item = jax.nn.one_hot(state.held_item, num_classes = state.items.shape[0])[0]
+        return jnp.concatenate([held_item, state.items], axis=0)
 
     def is_terminal(self, state: EnvState, params: EnvParams) -> bool:
         """Check whether state is terminal."""

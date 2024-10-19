@@ -85,7 +85,9 @@ class Singlepath(Base):
         """Observation space of the environment."""
         num_items = params.n_total_items # actually this is plus the init items
 
-        return spaces.Box(low=0, high=params.n_total_items, shape=(params.max_steps_in_episode,3), dtype=jnp.int32)
+        obs_space = spaces.Box(low=0,high=2,shape=(params.n_total_items*2), dtype=jnp.int32)
+
+        return obs_space
 
     def state_space(self, params: EnvParams) -> spaces.Dict:
         """State space of the environment."""

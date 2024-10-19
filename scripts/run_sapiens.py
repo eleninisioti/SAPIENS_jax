@@ -1,6 +1,8 @@
 import sys
 import os
 sys.path.append(".")
+sys.path.append("envs")
+
 from sapiens.sapiens import main
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,2"
 sys.path.append("envs")
