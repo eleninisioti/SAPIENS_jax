@@ -609,9 +609,8 @@ def evaluate(train_state, config, train_seed):
 
 
 def main(env_name , num_agents, connectivity, trial, local_mode=False):
-
-    project_name = + datetime.today().strftime(
-        '%Y_%m_%d') + "sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(num_agents) + "_trial_" + str(trial)
+    project_name =  "/sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(
+        num_agents) + "_trial_" + str(trial)
 
 
     total_timesteps = {"CartPole-v1": 8e5,
@@ -645,12 +644,24 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
         "NUM_SEEDS": 1,
         "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
-        "project_dir": "projects/" + project_name,
         "PROJECT": "sapiens",
         "project_name": project_name,
         "num_eval_trials": 100,
         "local_mode": local_mode # if True, evaluation data will be saved locally, otherwise under server SCRATCH
     }
+
+    if config["local_mode"]:
+        top_dir = "projects/"
+    else:
+        top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/projects/"
+
+    project_dir  = top_dir +  datetime.today().strftime(
+        '%Y_%m_%d') + "/" + project_name
+
+    if not os.path.exists(project_dir):
+        os.makedirs(project_dir)
+
+    config["project_dir"] = project_dir
 
     config = init_connectivity(config)
 
@@ -663,7 +674,6 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
     else:
         wandb_mode = "offline"
         os.environ['WANDB_DIR'] = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
-
 
 
 
