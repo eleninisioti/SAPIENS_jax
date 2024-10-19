@@ -630,7 +630,7 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e5,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 8e5
+                       "Single-path-alchemy": 8e3
 
                        }
 
@@ -708,12 +708,12 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
     outs = jax.block_until_ready(train_vjit(rngs))
 
     with open(config["project_dir"] + "/train_outs.pkl", "wb") as f:
-        pickle.dump(outs)
+        pickle.dump(outs["metrics"], f)
 
     eval_info =[]
     for train_seed in range(config["NUM_SEEDS"]):
         train_info = jax.tree_map(lambda x: x[train_seed], outs["runner_state"][0])
-
+        print("evaluating")
         eval_info.append(evaluate(train_info, config, train_seed=train_seed))
 
     mean_mean = onp.mean([el[0] for el in eval_info])
