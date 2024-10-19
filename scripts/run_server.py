@@ -37,7 +37,7 @@ def write_file(env, num_agents, connectivity, trial):
 
 
 def run_campaign():
-    envs = ["Freeway-MinAtar"]
+    envs = ["Single-path-alchemy","Merging-paths-alchemy","Bestoften-paths-alchemy" ]
     num_agents_values = [1, 5, 10, 20]
     for env_name in envs:
         for num_agents in num_agents_values:

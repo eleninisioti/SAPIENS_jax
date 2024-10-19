@@ -561,7 +561,14 @@ def evaluate(train_state, config, train_seed):
 
         key = jax.random.PRNGKey(trial)
 
-        basic_env, env_params = gymnax.make(config["ENV_NAME"])
+        if "alchemy" in config["ENV_NAME"]:
+
+            # we create the group
+            basic_env = alchemy_envs.get_environment(config["ENV_NAME"])
+            env_params = basic_env.default_params
+
+        else:
+            basic_env, env_params = gymnax.make(config["ENV_NAME"])
         env = FlattenObservationWrapper(basic_env)
         env = LogWrapper(env)
 
@@ -630,7 +637,9 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e5,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 8e3
+                       "Single-path-alchemy": 8e6,
+                       "Merging-paths-alchemy": 8e7,
+                       "Bestoften-paths-alchemy": 8e7
 
                        }
 

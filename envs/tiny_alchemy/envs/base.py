@@ -39,7 +39,7 @@ class Base(environment.Environment):
         """Performs step transitions in the environment."""
         prev_terminal = self.is_terminal(state, params)
 
-        @jax.jit
+        #@jax.jit
         def find_matching_row(A, B):
             # Step 1: Slice A to get the first two columns
             A_first_two_columns = A[:, :2]
@@ -63,7 +63,7 @@ class Base(environment.Environment):
         valid_action = jnp.where(jnp.logical_and(state.items[action], state.held_item!=999), 1.0,0.0)
 
         # Check that the action combination is valid
-        matching_row_index = find_matching_row(state.recipe_book, action)
+        matching_row_index = find_matching_row(state.recipe_book, jnp.concatenate([state.held_item, jnp.expand_dims(action,axis=0)], axis=0))
 
         result = state.recipe_book[matching_row_index, 2].astype(jnp.int32)
 
@@ -71,7 +71,7 @@ class Base(environment.Environment):
 
         new_items = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), new_items, state.items)
 
-        reward = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), 1.0, 0.0)
+        reward = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), state.recipe_book[matching_row_index, 3], 0.0)
         reward = jnp.where(prev_terminal, 0, reward)[0]
 
 

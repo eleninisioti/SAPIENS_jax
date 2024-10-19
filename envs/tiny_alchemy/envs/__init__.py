@@ -1,7 +1,12 @@
 from envs.tiny_alchemy.envs import single_path
+from envs.tiny_alchemy.envs import merging_paths
+from envs.tiny_alchemy.envs import bestoften_paths
+
 from envs.tiny_alchemy.envs.base import Base
 
-_envs = {"Single-path-alchemy": single_path.Singlepath
+_envs = {"Single-path-alchemy": single_path.Singlepath,
+        "Merging-paths-alchemy": merging_paths.Mergingpaths,
+         "Bestoften-paths-alchemy": bestoften_paths.Bestoftenpaths
 
          }
 

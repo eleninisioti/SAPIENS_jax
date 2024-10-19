@@ -18,11 +18,11 @@ class EnvState:
 @struct.dataclass
 class EnvParams:
     max_steps_in_episode: int = 8
-    n_init_items: int = 3
-    n_total_items: int = 11
+    n_init_items: int = 6
+    n_total_items: int = 26
 
 
-class Singlepath(Base):
+class Mergingpaths(Base):
     """
     Simplified version of Little Alchemy
     """
@@ -41,12 +41,12 @@ class Singlepath(Base):
     def build_recipe_book(self, key, params):
 
         #init_items = jnp.arange(params.n_init_items)
+        # make first branch
         n_init_items = 3
-        n_total_items = 11
+        n_total_items = 11*2+4
         max_steps_in_episode = 8
         recipe = jnp.zeros([max_steps_in_episode, 4]) # first item, second item, result
         key, current_key = jax.random.split(key)
-
         first_item = jax.random.choice(current_key, n_init_items)
         for step in range(max_steps_in_episode):
 
@@ -56,13 +56,53 @@ class Singlepath(Base):
             reward = step +1
             new_comb = jnp.array([first_item, second_item, result, reward])
             recipe = recipe.at[step].set(new_comb)
+            first_item = result
+
+        recipe_first = recipe
+        # make second branch
+        n_init_items = 3
+        max_steps_in_episode = 8
+        recipe = jnp.zeros([max_steps_in_episode, 4]) # first item, second item, result
+        key, current_key = jax.random.split(key)
+        init_items = jnp.arange(max_steps_in_episode+n_init_items, max_steps_in_episode+n_init_items+n_init_items)
+
+        first_item = jax.random.choice(current_key, init_items)
+        for step in range(max_steps_in_episode):
+
+            key, current_key = jax.random.split(key)
+            second_item = jax.random.choice(current_key, init_items)
+            result = step + 2*n_init_items +max_steps_in_episode
+            reward = step +1
+            new_comb = jnp.array([first_item, second_item, result, reward])
+            recipe = recipe.at[step].set(new_comb)
 
             first_item = result
 
+        recipe_second = recipe
+
+        # make middle branch, it will have four elements
+        max_steps_in_episode_half = int(max_steps_in_episode/2)
+        first_item = jax.random.choice(current_key, jnp.arange((n_init_items+max_steps_in_episode)*2, (n_init_items+max_steps_in_episode)*2 +(n_init_items+max_steps_in_episode_half) ))
+        recipe = jnp.zeros((max_steps_in_episode, 4)) # first item, second item, result
+        reward_init = 8
+        recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-1], recipe_second[1][-1], first_item, reward_init]))
+
+        total_init_items = jnp.concatenate([jnp.arange(n_init_items), init_items], axis=0)
+        for step in range(1,max_steps_in_episode+1):
+
+            key, current_key = jax.random.split(key)
+            second_item = jax.random.choice(current_key, total_init_items)
+            result = step + 2*n_init_items +max_steps_in_episode*2
+            reward = reward_init + (step+1)*2
+            new_comb = jnp.array([first_item, second_item, result,reward ])
+            recipe = recipe.at[step].set(new_comb)
+            first_item = result
+        recipe_middle = recipe
+
+        recipe = jnp.concatenate([recipe_first, recipe_second, recipe_middle], axis=0)
 
         items = jax.numpy.zeros((n_total_items,))
         items = items.at[:n_init_items].set(1)
-
         return recipe, items
 
     @property
@@ -73,7 +113,7 @@ class Singlepath(Base):
     @property
     def num_actions(self) -> int:
         """Number of actions possible in environment."""
-        return 11  # number of items
+        return 26  # number of items
 
     def action_space(
         self, params: Optional[EnvParams] = None
