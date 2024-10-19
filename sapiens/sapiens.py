@@ -616,6 +616,7 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e5,
                        "Freeway-MinAtar": 8e6,
+                       "Single-path-alchemy": 8e5
 
                        }
 
@@ -665,7 +666,7 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
 
     config = init_connectivity(config)
 
-    with open(config["project_dir"] + "/config.yaml", "r") as f:
+    with open(config["project_dir"] + "/config.yaml", "w") as f:
         yaml.dump(config, f)
 
     if local_mode:
