@@ -6,6 +6,7 @@ from typing import Tuple, Optional
 import chex
 from flax import struct
 from envs.tiny_alchemy.envs.base import Base
+#from gym import spaces
 
 @struct.dataclass
 class EnvState:
@@ -84,7 +85,7 @@ class Singlepath(Base):
         """Observation space of the environment."""
         num_items = params.n_total_items # actually this is plus the init items
 
-        return spaces.MultiDiscrete([num_items]*(1+params.n_total_items))
+        return spaces.Box(low=0, high=params.n_total_items, shape=(params.max_steps_in_episode,3), dtype=jnp.int32)
 
     def state_space(self, params: EnvParams) -> spaces.Dict:
         """State space of the environment."""

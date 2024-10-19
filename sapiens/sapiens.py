@@ -115,7 +115,7 @@ def make_train(config):
             # INIT BUFFER
 
             rng = jax.random.PRNGKey(0)  # use a dummy rng here
-            _action = basic_env.action_space().sample(rng)
+            _action = basic_env.action_space(env_params).sample(rng)
             _, _env_state = env.reset(rng, env_params)
             _obs, _, _reward, _done, _ = env.step(rng, _env_state, _action, env_params)
             _timestep = TimeStep(obs=_obs, action=_action, reward=_reward, done=_done)
@@ -536,7 +536,7 @@ def init_connectivity(config):
     else:
         config["NUM_NEIGHBORS"] = 0  # start with one neighbor but due to visits the maximum is two
 
-        initial_graph = jnp.array([ ]*20)
+        initial_graph = [[] ]
     config["initial_graph"] = jnp.array(initial_graph)
 
     return config
