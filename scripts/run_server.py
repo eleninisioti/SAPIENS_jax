@@ -21,7 +21,7 @@ def write_file(env, num_agents, connectivity, trial):
         file.write("#SBATCH --job-name=" + job_name + "\n")
         file.write("#SBATCH -A imi@v100" + "\n")
         file.write("#SBATCH --gres=gpu:1 "+ "\n")
-        file.write("#SBATCH --time=05:00:00"+ "\n")
+        file.write("#SBATCH --time=20:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
