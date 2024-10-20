@@ -37,14 +37,32 @@ def write_file(env, num_agents, connectivity, shared_batch_size, prob_visit, vis
         file.write(command+ "\n")
 
 
-def run_campaign():
-    envs = ["Single-path-alchemy","Merging-paths-alchemy","Bestoften-paths-alchemy" ]
-    num_agents_values = [1, 5, 10, 20]
+def alchemy():
+    envs = ["Single-path-alchemy", "Merging-paths-alchemy"]
+    num_agents_values = [1]
     for env_name in envs:
         for num_agents in num_agents_values:
-            for trial in range(10):
+            for trial in range(3):
+                for connectivity in ["fully"]:
+                    write_file(env_name, num_agents, connectivity, 1, 0.2, 10, trial)
+
+
+    num_agents_values = [5, 10, 20]
+    for env_name in envs:
+        for num_agents in num_agents_values:
+            for trial in range(3):
                 for connectivity in ["fully", "dynamic"]:
-                    write_file(env_name, num_agents, connectivity, trial)
+                    write_file(env_name, num_agents, connectivity, 1, 0.2, 10, trial)
+
+
+    num_agents_values = [5, 10, 20]
+    for env_name in envs:
+        for num_agents in num_agents_values:
+            for prob_visit in [0.05, 0.1, 0.2, 0.5]:
+                for visit_duration in [1, 5, 10, 20]:
+                    for trial in range(3):
+                        for connectivity in ["dynamic"]:
+                            write_file(env_name, num_agents, connectivity, 1, prob_visit, visit_duration, trial)
 
 def anal_freeway():
     envs = ["Freeway-MinAtar"]
@@ -54,10 +72,11 @@ def anal_freeway():
             for visit_duration in [1, 5, 10, 20]:
                 for env_name in envs:
                     for num_agents in num_agents_values:
-                        for trial in range(10):
+                        for trial in range(3):
                             for connectivity in ["dynamic"]:
                                 write_file(env_name, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial)
 
 
 if __name__ == "__main__":
     anal_freeway()
+    alchemy()
