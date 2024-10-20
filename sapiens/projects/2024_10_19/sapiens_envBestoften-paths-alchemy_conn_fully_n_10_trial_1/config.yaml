@@ -1,0 +1,67 @@
+BUFFER_BATCH_SIZE: 128
+BUFFER_SIZE: 10000
+CONNECTIVITY: fully
+DIVERSITY_INTERVAL: 100
+ENTITY: eleni
+ENV_NAME: Bestoften-paths-alchemy
+EPSILON_ANNEAL_TIME: 250000.0
+EPSILON_FINISH: 0.05
+EPSILON_START: 1.0
+GAMMA: 0.99
+LEARNING_STARTS: 10000
+LR: 0.00025
+LR_LINEAR_DECAY: false
+NUM_AGENTS: 10
+NUM_NEIGHBORS: 9
+NUM_SEEDS: 1
+PROB_VISIT: 0.2
+PROJECT: sapiens
+SEED: 1
+SHARED_BATCH_SIZE: 5
+TARGET_UPDATE_INTERVAL: 500
+TAU: 1.0
+TOTAL_TIMESTEPS: 80000000.0
+TRAINING_INTERVAL: 10
+VISIT_DURATION: 0.2
+WANDB_MODE: online
+initial_graph: !!python/object/apply:jax._src.array._reconstruct_array
+- !!python/name:numpy.core.multiarray._reconstruct ''
+- !!python/tuple
+  - !!python/name:numpy.ndarray ''
+  - !!python/tuple
+    - 0
+  - !!binary |
+    Yg==
+- !!python/tuple
+  - 1
+  - !!python/tuple
+    - 10
+    - 9
+  - !!python/object/apply:numpy.dtype
+    args:
+    - i4
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - false
+  - !!binary |
+    AQAAAAIAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAAAAAAAAIAAAADAAAABAAAAAUAAAAG
+    AAAABwAAAAgAAAAJAAAAAAAAAAEAAAADAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAAAAAAAAEA
+    AAACAAAABAAAAAUAAAAGAAAABwAAAAgAAAAJAAAAAAAAAAEAAAACAAAAAwAAAAUAAAAGAAAABwAA
+    AAgAAAAJAAAAAAAAAAEAAAACAAAAAwAAAAQAAAAGAAAABwAAAAgAAAAJAAAAAAAAAAEAAAACAAAA
+    AwAAAAQAAAAFAAAABwAAAAgAAAAJAAAAAAAAAAEAAAACAAAAAwAAAAQAAAAFAAAABgAAAAgAAAAJ
+    AAAAAAAAAAEAAAACAAAAAwAAAAQAAAAFAAAABgAAAAcAAAAJAAAAAAAAAAEAAAACAAAAAwAAAAQA
+    AAAFAAAABgAAAAcAAAAIAAAA
+- weak_type: false
+local_mode: true
+num_eval_trials: 100
+project_dir: projects/2024_10_19//sapiens_envBestoften-paths-alchemy_conn_fully_n_10_trial_1
+project_name: /sapiens_envBestoften-paths-alchemy_conn_fully_n_10_trial_1

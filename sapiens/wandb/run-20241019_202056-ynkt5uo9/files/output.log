@@ -1,0 +1,21 @@
+/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/flashbax/buffers/trajectory_buffer.py:473: UserWarning: Setting max_size dynamically sets the `max_length_time_axis` to be `max_size`//`add_batch_size = 10000`.This allows one to control exactly how many timesteps are stored in the buffer.Note that this overrides the `max_length_time_axis` argument.
+  warnings.warn(
+/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/jax/_src/numpy/array_methods.py:69: UserWarning: Explicitly requested dtype <class 'jax.numpy.int64'> requested in astype is not available, and will be truncated to dtype int32. To enable more dtypes, set the jax_enable_x64 configuration option or the JAX_ENABLE_X64 shell environment variable. See https://github.com/google/jax#current-gotchas for more.
+  return lax_numpy.astype(arr, dtype, copy=copy, device=device)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:137: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  target_network_params=jax.tree_map(lambda x: jnp.copy(x), network_params),
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:208: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  timestep = jax.tree_map(lambda x: jnp.expand_dims(x,1), timestep)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:216: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  exp = jax.tree_map(lambda x: x[:,:config["SHARED_BATCH_SIZE"],...], exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:224: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:225: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:208: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  timestep = jax.tree_map(lambda x: jnp.expand_dims(x,1), timestep)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:216: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  exp = jax.tree_map(lambda x: x[:,:config["SHARED_BATCH_SIZE"],...], exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:224: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).
+  shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
+/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py:225: DeprecationWarning: jax.tree_map is deprecated: use jax.tree.map (jax v0.4.25 or newer) or jax.tree_util.tree_map (any JAX version).

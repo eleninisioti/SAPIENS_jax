@@ -1,0 +1,47 @@
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Current SDK version is 0.17.5
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Configure stats pid to 8557
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Loading settings from /Users/enis/.config/wandb/settings
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Loading settings from /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/settings
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'sapiens/sapiens.py', 'program_abspath': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py', 'program': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py'}
+2024-10-19 20:55:38,651 INFO    MainThread:8557 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:_log_setup():529] Logging user logs to /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_205538-qef7v2b0/logs/debug.log
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:_log_setup():530] Logging internal logs to /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_205538-qef7v2b0/logs/debug-internal.log
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:init():569] calling init triggers
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:init():576] wandb.init called with sweep_config: {}
+config: {'NUM_AGENTS': 1, 'BUFFER_SIZE': 10000, 'BUFFER_BATCH_SIZE': 128, 'SHARED_BATCH_SIZE': 5, 'CONNECTIVITY': 'fully', 'TOTAL_TIMESTEPS': 8000.0, 'EPSILON_START': 1.0, 'EPSILON_FINISH': 0.05, 'EPSILON_ANNEAL_TIME': 250000.0, 'TARGET_UPDATE_INTERVAL': 500, 'LR': 0.00025, 'LEARNING_STARTS': 10000, 'TRAINING_INTERVAL': 10, 'DIVERSITY_INTERVAL': 100, 'PROB_VISIT': 0.2, 'VISIT_DURATION': 0.2, 'LR_LINEAR_DECAY': False, 'GAMMA': 0.99, 'TAU': 1.0, 'ENV_NAME': 'Single-path-alchemy', 'SEED': 0, 'NUM_SEEDS': 1, 'WANDB_MODE': 'online', 'ENTITY': 'eleni', 'PROJECT': 'sapiens', 'project_name': '/sapiens_envSingle-path-alchemy_conn_fully_n_1_trial_0', 'num_eval_trials': 100, 'local_mode': True, 'project_dir': 'projects/2024_10_19//sapiens_envSingle-path-alchemy_conn_fully_n_1_trial_0', 'NUM_NEIGHBORS': 0, 'initial_graph': Array([], shape=(1, 0), dtype=float32)}
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:init():619] starting backend
+2024-10-19 20:55:38,652 INFO    MainThread:8557 [wandb_init.py:init():623] setting up manager
+2024-10-19 20:55:38,658 INFO    MainThread:8557 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-10-19 20:55:38,661 INFO    MainThread:8557 [wandb_init.py:init():631] backend started and connected
+2024-10-19 20:55:38,672 INFO    MainThread:8557 [wandb_init.py:init():720] updated telemetry
+2024-10-19 20:55:38,694 INFO    MainThread:8557 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2024-10-19 20:55:39,120 INFO    MainThread:8557 [wandb_run.py:_on_init():2435] communicating current version
+2024-10-19 20:55:39,169 INFO    MainThread:8557 [wandb_run.py:_on_init():2444] got version response upgrade_message: "wandb version 0.18.5 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2024-10-19 20:55:39,169 INFO    MainThread:8557 [wandb_init.py:init():804] starting run threads in backend
+2024-10-19 20:55:40,666 WARNING MainThread:8557 [wandb_init.py:init():1185] interrupted
+Traceback (most recent call last):
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1181, in init
+    return wi.init()
+           ^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 817, in init
+    run_start_result = run_start_handle.wait(timeout=30)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/wandb/sdk/lib/mailbox.py", line 283, in wait
+    found, abandoned = self._slot._get_and_clear(timeout=wait_timeout)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/wandb/sdk/lib/mailbox.py", line 130, in _get_and_clear
+    if self._wait(timeout=timeout):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/site-packages/wandb/sdk/lib/mailbox.py", line 126, in _wait
+    return self._event.wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/threading.py", line 622, in wait
+    signaled = self._cond.wait(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/enis/miniconda3/envs/GrowAI_framework/lib/python3.11/threading.py", line 324, in wait
+    gotit = waiter.acquire(True, timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

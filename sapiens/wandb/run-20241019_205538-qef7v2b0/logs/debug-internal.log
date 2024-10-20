@@ -1,0 +1,33 @@
+2024-10-19 20:55:38,659 INFO    StreamThr :8571 [internal.py:wandb_internal():85] W&B internal server running at pid: 8571, started at: 2024-10-19 20:55:38.658701
+2024-10-19 20:55:38,660 DEBUG   HandlerThread:8571 [handler.py:handle_request():158] handle_request: status
+2024-10-19 20:55:38,672 INFO    WriterThread:8571 [datastore.py:open_for_write():87] open: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_205538-qef7v2b0/run-qef7v2b0.wandb
+2024-10-19 20:55:38,673 DEBUG   SenderThread:8571 [sender.py:send():379] send: header
+2024-10-19 20:55:38,695 DEBUG   SenderThread:8571 [sender.py:send():379] send: run
+2024-10-19 20:55:39,101 INFO    SenderThread:8571 [dir_watcher.py:__init__():211] watching files in: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_205538-qef7v2b0/files
+2024-10-19 20:55:39,101 INFO    SenderThread:8571 [sender.py:_start_run_threads():1188] run started: qef7v2b0 with start time 1729364138.661839
+2024-10-19 20:55:39,121 DEBUG   HandlerThread:8571 [handler.py:handle_request():158] handle_request: check_version
+2024-10-19 20:55:39,121 DEBUG   SenderThread:8571 [sender.py:send_request():406] send_request: check_version
+2024-10-19 20:55:39,175 DEBUG   HandlerThread:8571 [handler.py:handle_request():158] handle_request: run_start
+2024-10-19 20:55:39,185 DEBUG   HandlerThread:8571 [system_info.py:__init__():26] System info init
+2024-10-19 20:55:39,185 DEBUG   HandlerThread:8571 [system_info.py:__init__():41] System info init done
+2024-10-19 20:55:39,185 INFO    HandlerThread:8571 [system_monitor.py:start():194] Starting system monitor
+2024-10-19 20:55:39,186 INFO    SystemMonitor:8571 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-10-19 20:55:39,186 INFO    HandlerThread:8571 [system_monitor.py:probe():214] Collecting system info
+2024-10-19 20:55:39,187 INFO    SystemMonitor:8571 [interfaces.py:start():188] Started cpu monitoring
+2024-10-19 20:55:39,187 INFO    SystemMonitor:8571 [interfaces.py:start():188] Started disk monitoring
+2024-10-19 20:55:39,188 INFO    SystemMonitor:8571 [interfaces.py:start():188] Started gpuapple monitoring
+2024-10-19 20:55:39,192 INFO    SystemMonitor:8571 [interfaces.py:start():188] Started memory monitoring
+2024-10-19 20:55:39,193 INFO    SystemMonitor:8571 [interfaces.py:start():188] Started network monitoring
+2024-10-19 20:55:39,480 DEBUG   HandlerThread:8571 [system_info.py:probe():152] Probing system
+2024-10-19 20:55:39,484 DEBUG   HandlerThread:8571 [system_info.py:_probe_git():137] Probing git
+2024-10-19 20:55:39,504 DEBUG   HandlerThread:8571 [system_info.py:_probe_git():145] Probing git done
+2024-10-19 20:55:39,504 DEBUG   HandlerThread:8571 [system_info.py:probe():200] Probing system done
+2024-10-19 20:55:39,504 DEBUG   HandlerThread:8571 [system_monitor.py:probe():223] {'os': 'macOS-13.0-arm64-arm-64bit', 'python': '3.11.0', 'heartbeatAt': '2024-10-19T18:55:39.480741', 'startedAt': '2024-10-19T18:55:38.648140', 'docker': None, 'cuda': None, 'args': ('--env', 'Single-path-alchemy', '--n_agents', '1', '--trial', '0', '--local_mode'), 'state': 'running', 'program': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py', 'codePathLocal': 'sapiens.py', 'codePath': 'sapiens/sapiens.py', 'git': {'remote': 'https://github.com/eleninisioti/SAPIENS_jax.git', 'commit': '577250f4a3988348230e1fd73a96e747b6af6818'}, 'email': 'elennisioti@gmail.com', 'root': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax', 'host': 'Elenis-MacBook-Pro.local', 'username': 'enis', 'executable': '/Users/enis/miniconda3/envs/GrowAI_framework/bin/python3.11', 'cpu_count': 12, 'cpu_count_logical': 12, 'cpu_freq': {'current': 3504, 'min': 702, 'max': 3504}, 'cpu_freq_per_core': [{'current': 3504, 'min': 702, 'max': 3504}], 'disk': {'/': {'total': 926.3517189025879, 'used': 12.266864776611328}}, 'gpuapple': {'type': 'Apple M2 Pro', 'vendor': 'sppci_vendor_Apple'}, 'memory': {'total': 16.0}}
+2024-10-19 20:55:39,504 INFO    HandlerThread:8571 [system_monitor.py:probe():224] Finished collecting system info
+2024-10-19 20:55:39,504 INFO    HandlerThread:8571 [system_monitor.py:probe():227] Publishing system info
+2024-10-19 20:55:39,504 DEBUG   HandlerThread:8571 [system_info.py:_save_conda():209] Saving list of conda packages installed into the current environment
+2024-10-19 20:55:40,106 INFO    Thread-12 :8571 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_205538-qef7v2b0/files/conda-environment.yaml
+2024-10-19 20:55:40,759 DEBUG   HandlerThread:8571 [system_info.py:_save_conda():224] Saving conda packages done
+2024-10-19 20:55:40,760 INFO    HandlerThread:8571 [system_monitor.py:probe():229] Finished publishing system info
+2024-10-19 20:55:40,763 DEBUG   SenderThread:8571 [sender.py:send():379] send: files
+2024-10-19 20:55:40,763 INFO    SenderThread:8571 [sender.py:_save_file():1454] saving file wandb-metadata.json with policy now

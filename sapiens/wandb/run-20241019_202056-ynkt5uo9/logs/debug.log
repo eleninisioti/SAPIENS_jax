@@ -1,0 +1,28 @@
+2024-10-19 20:20:56,502 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Current SDK version is 0.17.5
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Configure stats pid to 3248
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Loading settings from /Users/enis/.config/wandb/settings
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Loading settings from /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/settings
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'sapiens/sapiens.py', 'program_abspath': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py', 'program': '/Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/sapiens.py'}
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-10-19 20:20:56,503 INFO    MainThread:3248 [wandb_init.py:_log_setup():529] Logging user logs to /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_202056-ynkt5uo9/logs/debug.log
+2024-10-19 20:20:56,504 INFO    MainThread:3248 [wandb_init.py:_log_setup():530] Logging internal logs to /Users/enis/Desktop/workspace/projects/SAPIENS_jax/sapiens/wandb/run-20241019_202056-ynkt5uo9/logs/debug-internal.log
+2024-10-19 20:20:56,504 INFO    MainThread:3248 [wandb_init.py:init():569] calling init triggers
+2024-10-19 20:20:56,504 INFO    MainThread:3248 [wandb_init.py:init():576] wandb.init called with sweep_config: {}
+config: {'NUM_AGENTS': 1, 'BUFFER_SIZE': 10000, 'BUFFER_BATCH_SIZE': 128, 'SHARED_BATCH_SIZE': 5, 'CONNECTIVITY': 'fully', 'TOTAL_TIMESTEPS': 8000.0, 'EPSILON_START': 1.0, 'EPSILON_FINISH': 0.05, 'EPSILON_ANNEAL_TIME': 250000.0, 'TARGET_UPDATE_INTERVAL': 500, 'LR': 0.00025, 'LEARNING_STARTS': 10000, 'TRAINING_INTERVAL': 10, 'DIVERSITY_INTERVAL': 100, 'PROB_VISIT': 0.2, 'VISIT_DURATION': 0.2, 'LR_LINEAR_DECAY': False, 'GAMMA': 0.99, 'TAU': 1.0, 'ENV_NAME': 'Single-path-alchemy', 'SEED': 0, 'NUM_SEEDS': 1, 'WANDB_MODE': 'online', 'ENTITY': 'eleni', 'PROJECT': 'sapiens', 'project_name': '/sapiens_envSingle-path-alchemy_conn_fully_n_1_trial_0', 'num_eval_trials': 100, 'local_mode': True, 'project_dir': 'projects/2024_10_19//sapiens_envSingle-path-alchemy_conn_fully_n_1_trial_0', 'NUM_NEIGHBORS': 0, 'initial_graph': Array([], shape=(1, 0), dtype=float32)}
+2024-10-19 20:20:56,504 INFO    MainThread:3248 [wandb_init.py:init():619] starting backend
+2024-10-19 20:20:56,504 INFO    MainThread:3248 [wandb_init.py:init():623] setting up manager
+2024-10-19 20:20:56,509 INFO    MainThread:3248 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-10-19 20:20:56,512 INFO    MainThread:3248 [wandb_init.py:init():631] backend started and connected
+2024-10-19 20:20:56,524 INFO    MainThread:3248 [wandb_init.py:init():720] updated telemetry
+2024-10-19 20:20:56,550 INFO    MainThread:3248 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2024-10-19 20:20:56,915 INFO    MainThread:3248 [wandb_run.py:_on_init():2435] communicating current version
+2024-10-19 20:20:56,949 INFO    MainThread:3248 [wandb_run.py:_on_init():2444] got version response upgrade_message: "wandb version 0.18.5 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2024-10-19 20:20:56,949 INFO    MainThread:3248 [wandb_init.py:init():804] starting run threads in backend
+2024-10-19 20:20:58,698 INFO    MainThread:3248 [wandb_run.py:_console_start():2413] atexit reg
+2024-10-19 20:20:58,699 INFO    MainThread:3248 [wandb_run.py:_redirect():2255] redirect: wrap_raw
+2024-10-19 20:20:58,699 INFO    MainThread:3248 [wandb_run.py:_redirect():2320] Wrapping output streams.
+2024-10-19 20:20:58,699 INFO    MainThread:3248 [wandb_run.py:_redirect():2345] Redirects installed.
+2024-10-19 20:20:58,701 INFO    MainThread:3248 [wandb_init.py:init():847] run started, returning control to user process
