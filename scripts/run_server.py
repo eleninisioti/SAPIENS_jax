@@ -3,10 +3,11 @@ sys.path.append(os.getcwd())
 from datetime import datetime
 import os
 
-def write_file(env, num_agents, connectivity, trial):
+def write_file(env, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial):
     top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/"
     current_date = datetime.today().strftime('%Y_%m_%d')
-    name = "/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_trial_" + str(trial)
+    name = ("/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_shared_batch_" + str(shared_batch_size)
+            + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration)+ "_trial_" + str(trial))
 
     file_name = (top_dir + "jz_scripts/" + current_date + name + ".slurm")
 
@@ -32,7 +33,7 @@ def write_file(env, num_agents, connectivity, trial):
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
-        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + " --trial " + str(trial)
+        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial)
         file.write(command+ "\n")
 
 
@@ -45,6 +46,18 @@ def run_campaign():
                 for connectivity in ["fully", "dynamic"]:
                     write_file(env_name, num_agents, connectivity, trial)
 
+def anal_freeway():
+    envs = ["Freeway-MinAtar"]
+    num_agents_values = [1, 5, 10, 20, 50]
+    for shared_batch_size in [1, 5, 10]:
+        for prob_visit in [0.05, 0.1, 0.2, 0.5]:
+            for visit_duration in [1, 5, 10, 20]:
+                for env_name in envs:
+                    for num_agents in num_agents_values:
+                        for trial in range(10):
+                            for connectivity in ["dynamic"]:
+                                write_file(env_name, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial)
+
 
 if __name__ == "__main__":
-    run_campaign()
+    anal_freeway()

@@ -629,8 +629,8 @@ def evaluate(train_state, config, train_seed):
 
 
 
-def main(env_name , num_agents, connectivity, trial, local_mode=False):
-    project_name =  "/sapiens_env" + env_name + "_conn_" + str(connectivity) + "_n_" + str(
+def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial, local_mode=False):
+    project_name =  "/sapiens_env" + env_name + "_conn_" + str(connectivity) + "_shared_batch_" + str(shared_batch_size) + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_n_" + str(
         num_agents) + "_trial_" + str(trial)
 
 
@@ -647,7 +647,7 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
         "NUM_AGENTS": num_agents,
         "BUFFER_SIZE": 10000,
         "BUFFER_BATCH_SIZE": 128,
-        "SHARED_BATCH_SIZE": 5,
+        "SHARED_BATCH_SIZE": shared_batch_size,
         "CONNECTIVITY": connectivity,
         "TOTAL_TIMESTEPS": total_timesteps[env_name],
         "EPSILON_START": 1.0,
@@ -658,8 +658,8 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
         "LEARNING_STARTS": 10000,
         "TRAINING_INTERVAL": 10,
         "DIVERSITY_INTERVAL": 100,
-        "PROB_VISIT": 0.2,
-        "VISIT_DURATION": 0.2,
+        "PROB_VISIT": prob_visit,
+        "VISIT_DURATION": visit_duration,
         "LR_LINEAR_DECAY": False,
         "GAMMA": 0.99,
         "TAU": 1.0,
@@ -739,8 +739,6 @@ def main(env_name , num_agents, connectivity, trial, local_mode=False):
         f.write("Var of max group performance " + str(var_max))
 
 
-
-
     #with open(project_dir + "/policy.pkl", "wb") as f:
     #    pickle.dump(outs["runner_state"][0], f)
     wandb.finish()
@@ -754,6 +752,10 @@ if __name__ == "__main__":
     parser.add_argument("--env", type=str, help="Name of the environment",default="CartPole-v1")
     parser.add_argument("--n_agents", type=int, help="Number of agents",default=10)
     parser.add_argument("--trial", type=int, help="Number of agents",default=1)
+    parser.add_argument("--shared_batch_size", type=int, help="NUmber of exps shared at each step",default=1)
+    parser.add_argument("--prob_visit", type=float, help="Probability of visit in dynamic networks",default=0.2)
+    parser.add_argument("--visit_duration", type=int, help="Duration of visit in dynamic networks",default=10)
+
 
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
     parser.add_argument("--local_mode", action='store_true')
@@ -761,7 +763,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, trial=args.trial,  local_mode=args.local_mode)
+    main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, shared_batch_size=args.shared_batch_size,
+         prob_visit= args.prob_visit, visit_duration=args.visit_duration, trial=args.trial,  local_mode=args.local_mode)
 
 
 
