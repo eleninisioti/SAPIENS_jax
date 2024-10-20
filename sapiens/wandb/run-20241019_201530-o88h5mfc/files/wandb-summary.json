@@ -1,1 +1,0 @@
-{"loss": 0.2163493037223816, "loss_max": 0.2163493037223816, "mnemonic_diversity_max": 0.02338176965713501, "mnemonic_diversity_mean": 0.02338176965713501, "returns": 0.0, "returns_max": 0.0, "timesteps": 800000, "updates": 79000, "_timestamp": 1729362024.580839, "_runtime": 294.4039008617401, "_step": 7999, "_wandb": {"runtime": 293}}
