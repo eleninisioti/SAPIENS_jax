@@ -33,7 +33,7 @@ def write_file(env, num_agents, connectivity, shared_batch_size, prob_visit, vis
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
-        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial)
+        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " -- shared_batch_size " + str(shared_batch_size)
         file.write(command+ "\n")
 
 
@@ -76,7 +76,15 @@ def anal_freeway():
                             for connectivity in ["dynamic"]:
                                 write_file(env_name, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial)
 
+def parametric(env_name):
+
+    for num_agents in [5, 10, 20]:
+        for connectivity in ["fully", "dynamic"]:
+            write_file(env_name, num_agents, connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10, trial=0)
+
+    write_file(env_name, 1, connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10, trial=0)
+
 
 if __name__ == "__main__":
-    anal_freeway()
-    alchemy()
+    env_name ="Single-path-alchemy"
+    parametric(env_name)

@@ -606,9 +606,9 @@ def evaluate(train_state, config, train_seed):
             with open(save_dir + "/traj.pkl", "wb") as f:
                 pickle.dump([env, env_params, state_seq, ep_reward], f)
 
-            if config["local_mode"]:
-                vis = Visualizer(env, env_params, state_seq, ep_reward)
-                vis.animate(save_dir + "/anim.gif")
+            #if config["local_mode"]:
+            #    vis = Visualizer(env, env_params, state_seq, ep_reward)
+            #    vis.animate(save_dir + "/anim.gif")
 
         mean_rewards.append(onp.mean(agent_rewards))
         max_rewards.append(onp.max(agent_rewards))
@@ -635,9 +635,9 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
 
     total_timesteps = {"CartPole-v1": 8e5,
-                       "MountainCar-v0": 8e5,
+                       "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 8e6,
+                       "Single-path-alchemy": 8e5,
                        "Merging-paths-alchemy": 8e7,
                        "Bestoften-paths-alchemy": 8e7
 
@@ -668,7 +668,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "NUM_SEEDS": 1,
         "WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
-        "PROJECT": "sapiens",
+        "PROJECT": "sapiens_report",
         "project_name": project_name,
         "num_eval_trials": 100,
         "local_mode": local_mode # if True, evaluation data will be saved locally, otherwise under server SCRATCH
@@ -755,8 +755,6 @@ if __name__ == "__main__":
     parser.add_argument("--shared_batch_size", type=int, help="NUmber of exps shared at each step",default=1)
     parser.add_argument("--prob_visit", type=float, help="Probability of visit in dynamic networks",default=0.2)
     parser.add_argument("--visit_duration", type=int, help="Duration of visit in dynamic networks",default=10)
-
-
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
     parser.add_argument("--local_mode", action='store_true')
 
