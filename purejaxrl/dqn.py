@@ -252,9 +252,9 @@ def make_train(config):
 
 def main():
 
-    env_name ="Freeway-MinAtar"
-    env_name ="Pendulum-v1"
-    env_name ="MountainCar-v0"
+    env_name ="CartPole-v1"
+    #env_name ="Pendulum-v1"
+    #env_name ="MountainCar-v0"
 
 
     config = {

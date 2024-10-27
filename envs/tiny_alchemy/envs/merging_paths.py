@@ -85,7 +85,7 @@ class Mergingpaths(Base):
         first_item = jax.random.choice(current_key, jnp.arange((n_init_items+max_steps_in_episode)*2, (n_init_items+max_steps_in_episode)*2 +(n_init_items+max_steps_in_episode_half) ))
         recipe = jnp.zeros((max_steps_in_episode, 4)) # first item, second item, result
         reward_init = 8
-        recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-1], recipe_second[1][-1], first_item, reward_init]))
+        recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-2], recipe_second[1][-2], first_item, reward_init]))
 
         total_init_items = jnp.concatenate([jnp.arange(n_init_items), init_items], axis=0)
         for step in range(1,max_steps_in_episode+1):

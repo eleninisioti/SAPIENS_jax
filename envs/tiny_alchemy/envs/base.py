@@ -60,11 +60,10 @@ class Base(environment.Environment):
 
         # check that the action items are available
 
-        valid_action = jnp.where(jnp.logical_and(state.items[action], state.held_item!=999), 1.0,0.0)
+        valid_action = jnp.where(state.items[action], 1.0,0.0)
 
         # Check that the action combination is valid
         matching_row_index = find_matching_row(state.recipe_book, jnp.concatenate([state.held_item, jnp.expand_dims(action,axis=0)], axis=0))
-
         result = state.recipe_book[matching_row_index, 2].astype(jnp.int32)
 
         new_items = state.items.at[result].set(1)
@@ -72,10 +71,11 @@ class Base(environment.Environment):
         new_items = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), new_items, state.items)
 
         reward = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), state.recipe_book[matching_row_index, 3], 0.0)
-        reward = jnp.where(prev_terminal, 0, reward)[0]
+        reward = jnp.where(prev_terminal, 0, reward)
 
 
         new_held_item= jnp.where(state.held_item==999, action, 999)
+        new_held_item = jnp.where(valid_action, new_held_item, 999)
 
         # Update state dict and evaluate termination conditions
         state = EnvState(recipe_book=state.recipe_book,items=new_items, time=state.time + 1,held_item=new_held_item)
@@ -115,7 +115,7 @@ class Base(environment.Environment):
         done = jnp.all(state.items)
 
         # Check number of steps in episode termination condition
-        done_steps = state.time >= params.max_steps_in_episode
+        done_steps = state.time >= (params.max_steps_in_episode*2)
         done = jnp.logical_or(done, done_steps)
         return done
 

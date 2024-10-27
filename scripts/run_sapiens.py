@@ -10,9 +10,9 @@ from envs.tiny_alchemy import envs as alchemy_envs
 
 def parametric(env_name):
 
-    for num_agents in [5, 10, 20]:
-        for connectivity in ["fully", "dynamic"]:
-            main(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10,  trial=0, local_mode=True)
+    for num_agents in [10, 20]:
+        for connectivity in ["independent", "fully", "dynamic", ]:
+            main(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=0, local_mode=True)
     main(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
          visit_duration=10, connectivity="fully", trial=0, local_mode=True)
 
@@ -26,10 +26,22 @@ def alchemy():
     main(env_name, num_agents, shared_batch_size=1, prob_visit=0.2, visit_duration=10, connectivity="fully",trial=0, local_mode=True)
 
 
+def independent():
+    env_name ="Single-path-alchemy"
+    #env_name ="MountainCar-v0"
+    #env_name = "Freeway-MinAtar"
+
+    num_agents = 20
+    main(env_name, num_agents=20, shared_batch_size=0, prob_visit=0.2, visit_duration=10, connectivity="independent",trial=0, local_mode=True)
+
+
 if __name__ == "__main__":
     #alchemy()
     env_name ="CartPole-v1"
-    #env_name ="MountainCar-v0"
-    env_name = "Freeway-MinAtar"
+    env_name ="MountainCar-v0"
+    #env_name = "Merging-paths-alchemy"
+    env_name = "Bestoften-paths-alchemy"
+
     #env_name = "Single-path-alchemy"
     parametric(env_name)
+    #independent()

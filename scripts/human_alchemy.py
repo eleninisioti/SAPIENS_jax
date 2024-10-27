@@ -64,9 +64,14 @@ def play_episode(game, episode_idx):
     jit_step =env.step
     params = env.default_params
 
+    print(state.recipe_book)
+
     actions = [0, 1, 3, 1, 4,1,5,0, 6,0,7,1,8,0,9,2]
+
+    #actions = [2,0,3,0,4,2,5,2,6,0,7,2,8,1,9,1,12,12,14,12]
+    #actions = [28, 0]
     for step in range(episode_length+1):
-        print(state)
+        #print(state)
         #display_state(state, step)
 
 
@@ -80,13 +85,11 @@ def play_episode(game, episode_idx):
 
         obs, state, reward, done, info =  jit_step(key, state, action, params)
         cum_reward += reward
-        print("cum " + str(cum_reward))
+        print("cum " + str(reward))
 
         #print(action, obs, reward)
 
         states.append(state)
-        cum_reward += reward
-
         if done:
             break
 
@@ -115,4 +118,4 @@ if __name__ == "__main__":
     print("You are the discrete fish robot. \n"
           "You have only four actions: moving left ('a'), moving right ('d'), moving forward ('w') and moving backward ('s').")
 
-    play_game(n_episodes=1, game="Bestoften-paths-alchemy")
+    play_game(n_episodes=1, game="Single-path-alchemy")

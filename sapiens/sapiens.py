@@ -30,10 +30,12 @@ class QNetwork(nn.Module):
 
     @nn.compact
     def __call__(self, x: jnp.ndarray):
-        x = nn.Dense(120)(x)
+        x = nn.Dense(64)(x)
         x = nn.relu(x)
-        x = nn.Dense(84)(x)
+        x = nn.Dense(64)(x)
         x = nn.relu(x)
+        #x = nn.Dense(64)(x)
+        #x = nn.relu(x)
         x = nn.Dense(self.action_dim)(x)
         return x
 
@@ -75,12 +77,6 @@ def make_train(config):
     env = LogWrapper(env)
     #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-    vmap_reset = lambda n_envs: lambda rng: jax.vmap(env.reset, in_axes=(0, None))(
-        jax.random.split(rng, n_envs), env_params
-    )
-    vmap_step = lambda n_envs: lambda rng, env_state, action: jax.vmap(
-        env.step, in_axes=(0, 0, 0, None)
-    )(jax.random.split(rng, n_envs), env_state, action, env_params)
 
     def train(rng):
 
@@ -109,8 +105,9 @@ def make_train(config):
 
         def init_agent(rng, agent_id):
             rng, _rng = jax.random.split(rng)
+            rng_temp = jax.random.PRNGKey(0)
 
-            init_obs, env_state = env.reset(_rng)
+            init_obs, env_state = env.reset(rng_temp)
 
             #init_obs = init_obs[0,...]
 
@@ -158,6 +155,9 @@ def make_train(config):
             rng_a, rng_e = jax.random.split(
                 rng, 2
             )  # a key for sampling random actions and one for picking
+
+
+            """
             eps = jnp.clip(  # get epsilon
                 (
                     (config["EPSILON_FINISH"] - config["EPSILON_START"])
@@ -167,6 +167,10 @@ def make_train(config):
                 + config["EPSILON_START"],
                 config["EPSILON_FINISH"],
             )
+            """
+            progress_remaining = (config["TOTAL_TIMESTEPS"] - t) / config["TOTAL_TIMESTEPS"]
+            eps = jnp.where((1 - progress_remaining) > config["EPSILON_FRACTION"], config["EPSILON_END"], config["EPSILON_START"] + (1 - progress_remaining) * (config["EPSILON_END"]- config["EPSILON_START"]) / config["EPSILON_FRACTION"])
+
             greedy_actions = jnp.argmax(q_vals, axis=-1)  # get the greedy actions
             chosed_actions = jnp.where(
                 jax.random.uniform(rng_e, greedy_actions.shape)
@@ -191,12 +195,24 @@ def make_train(config):
             rng_as = jax.random.split(rng_a, config["NUM_AGENTS"])
             action = jax.vmap(eps_greedy_exploration)(rng_as, q_vals, train_state.timesteps)
             # explore with epsilon greedy_exploration
-            rng_ss = jax.random.split(rng_s, config["NUM_AGENTS"])
+            #rng_ss = jax.random.split(rng_s, config["NUM_AGENTS"]) # TODO this is wrong, we need the same seed for environemnts across agents
             #env_state = jax.tree_map(lambda x: x[:, 0], env_state)
+            rng_ss = jnp.array([rng_s for el in range(config["NUM_AGENTS"] )])
             action = action
 
             obs, env_state, reward, done, info = jax.vmap(env.step)(rng_ss, env_state, action)
 
+            rng_temp = jnp.array([jax.random.PRNGKey(0) for el in range(config["NUM_AGENTS"] )])
+            _, env_state_reset = jax.vmap(env.reset)(rng_temp)
+
+            def expand_done_to_match(array, done):
+                # Reshape `done` to match the number of leading dimensions of `array`
+                expanded_done = jnp.reshape(done, done.shape + (1,) * (array.ndim - 1))
+                # Broadcast `done` to the shape of `array`
+                return jnp.broadcast_to(expanded_done, array.shape)
+
+            new_env_state = jax.tree_util.tree_map(lambda a,b: jnp.where(expand_done_to_match(a, done), a,b), env_state_reset.env_state, env_state.env_state)
+            env_state = env_state.replace(env_state=new_env_state)
 
             train_state = train_state.replace(
                 timesteps=train_state.timesteps + 1
@@ -223,9 +239,7 @@ def make_train(config):
 
             shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
             total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
-            #total_exp = jax.tree_map(lambda x: jnp.expand_dims(x,axis=2),total_exp)
-            #total_exp = timestep + shared_exp #TODO: just concatenate here
-            #total_exp = timestep
+
             buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
 
             buffer_obs = buffer_state.experience.obs
@@ -522,6 +536,10 @@ def init_connectivity(config):
                 el.remove(idx)
                 el.append(-1)
                 initial_graph.append(el) # -1 means it is an empty neighbor spot
+        else:
+            config["NUM_NEIGHBORS"] = 0  # start with one neighbor but due to visits the maximum is two
+
+            initial_graph = [[]]
 
             """
             for 
@@ -584,7 +602,10 @@ def evaluate(train_state, config, train_seed):
             key, agent_key = jax.random.split(key)
 
             agent_params = jax.tree_map(lambda x: x[agent], train_state.params)
-            last_obs, env_state = env.reset(agent_key)
+
+            rng_temp = jax.random.PRNGKey(0)
+
+            last_obs, env_state = env.reset(rng_temp)
 
             done = False
             ep_reward = []
@@ -638,25 +659,25 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
                        "Single-path-alchemy": 8e5,
-                       "Merging-paths-alchemy": 8e7,
+                       "Merging-paths-alchemy": 8e6,
                        "Bestoften-paths-alchemy": 8e7
 
                        }
 
     config = {
         "NUM_AGENTS": num_agents,
-        "BUFFER_SIZE": 10000,
-        "BUFFER_BATCH_SIZE": 128,
+        "BUFFER_SIZE": 5000,
+        "BUFFER_BATCH_SIZE": 64,
         "SHARED_BATCH_SIZE": shared_batch_size,
         "CONNECTIVITY": connectivity,
         "TOTAL_TIMESTEPS": total_timesteps[env_name],
         "EPSILON_START": 1.0,
-        "EPSILON_FINISH": 0.05,
-        "EPSILON_ANNEAL_TIME": 25e4,
-        "TARGET_UPDATE_INTERVAL": 500,
-        "LR": 2.5e-4,
+        "EPSILON_END": 0.05,
+        "EPSILON_FRACTION": 0.1,
+        "TARGET_UPDATE_INTERVAL": 10000,
+        "LR": 1e-4,
         "LEARNING_STARTS": 10000,
-        "TRAINING_INTERVAL": 10,
+        "TRAINING_INTERVAL": 4,
         "DIVERSITY_INTERVAL": 100,
         "PROB_VISIT": prob_visit,
         "VISIT_DURATION": visit_duration,

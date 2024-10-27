@@ -85,6 +85,14 @@ def parametric(env_name):
     write_file(env_name, 1, connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10, trial=0)
 
 
+def parametric(env_name):
+
+    for num_agents in [10, 20]:
+        for connectivity in [ "dynamic", ]:
+            write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=0)
+    write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
+         visit_duration=10, connectivity="fully", trial=0)
+
 if __name__ == "__main__":
-    env_name ="Single-path-alchemy"
+    env_name ="Merging-paths-alchemy"
     parametric(env_name)
