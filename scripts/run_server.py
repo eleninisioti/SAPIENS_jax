@@ -84,7 +84,7 @@ def parametric(env_name):
     for num_agents in [10, 20]:
         for connectivity in [ "dynamic", "fully-connected", "independent"]:
             for trial in range(10):
-                write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=0)
+                write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial)
     write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
          visit_duration=10, connectivity="fully", trial=0)
 
