@@ -50,7 +50,7 @@ def play_episode(game, episode_idx):
     # initialize environment
     env_name = game
     episode_length = 1000
-    env = alchemy_envs.get_environment(env_name)
+    env = alchemy_envs.get_environment(env_name, key=jax.random.PRNGKey(0))
 
     states = []
     jit_reset =jax.jit(env.reset)
@@ -66,7 +66,8 @@ def play_episode(game, episode_idx):
 
     print(state.recipe_book)
 
-    actions = [0, 1, 3, 1, 4,1,5,0, 6,0,7,1,8,0,9,2]
+    actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+    #actions = [3, 0]
 
     #actions = [2,0,3,0,4,2,5,2,6,0,7,2,8,1,9,1,12,12,14,12]
     #actions = [28, 0]
@@ -81,16 +82,18 @@ def play_episode(game, episode_idx):
         start = time.time()
 
         key, current_key = jax.random.split(key)
-
-
+        print(obs)
         obs, state, reward, done, info =  jit_step(key, state, action, params)
         cum_reward += reward
         print("cum " + str(reward))
+
 
         #print(action, obs, reward)
 
         states.append(state)
         if done:
+            print("resetting")
+            print(cum_reward)
             break
 
 

@@ -17,7 +17,7 @@ class EnvState:
 
 @struct.dataclass
 class EnvParams:
-    max_steps_in_episode: int = 8
+    max_steps_in_episode: int = 10
     n_init_items: int = 3
     n_total_items: int = 11
 
@@ -27,10 +27,11 @@ class Singlepath(Base):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, recipe="single-path"):
-        super().__init__()
+    def __init__(self, key, recipe="single-path"):
+        super().__init__(key)
 
         self.obs_shape = (14,)
+        self.episode_length = 16
 
 
     @property
@@ -44,21 +45,20 @@ class Singlepath(Base):
         n_init_items = 3
         n_total_items = 11
         max_steps_in_episode = 8
-        recipe = jnp.zeros([max_steps_in_episode, 4]) # first item, second item, result
+        recipe = jnp.zeros([max_steps_in_episode, 5]) # first item, second item, result, path-index of result
         key, current_key = jax.random.split(key)
 
         first_item = jax.random.choice(current_key, n_init_items)
+        path = 0
         for step in range(max_steps_in_episode):
 
             key, current_key = jax.random.split(key)
             second_item = jax.random.choice(current_key, n_init_items)
             result = step + n_init_items
             reward = step +1
-            new_comb = jnp.array([first_item, second_item, result, reward])
+            new_comb = jnp.array([first_item, second_item, result, reward, path])
             recipe = recipe.at[step].set(new_comb)
-
             first_item = result
-
 
         items = jax.numpy.zeros((n_total_items,))
         items = items.at[:n_init_items].set(1)
@@ -84,7 +84,6 @@ class Singlepath(Base):
 
     def observation_space(self, params: EnvParams) -> spaces.Box:
         """Observation space of the environment."""
-        num_items = params.n_total_items # actually this is plus the init items
 
         obs_space = spaces.Box(low=0,high=2,shape=(params.n_total_items*2), dtype=jnp.int32)
 
@@ -92,7 +91,6 @@ class Singlepath(Base):
 
     def state_space(self, params: EnvParams) -> spaces.Dict:
         """State space of the environment."""
-        num_items = params.max_steps_in_episode
 
         return spaces.Dict(
             {

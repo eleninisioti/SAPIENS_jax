@@ -26,9 +26,9 @@ class Base(environment.Environment):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, recipe="single-path"):
+    def __init__(self, key, recipe="single-path"):
         super().__init__()
-
+        self.key = key
         self.obs_shape = (4,)
 
 
@@ -41,7 +41,7 @@ class Base(environment.Environment):
 
         #@jax.jit
         def find_matching_row(A, B):
-            # Step 1: Slice A to get the first two columns
+            # Step 1: Slice A to get the first two columns that correspond to the components of the item
             A_first_two_columns = A[:, :2]
 
             # Step 2: Compare the first two columns of A with B
@@ -67,11 +67,14 @@ class Base(environment.Environment):
         result = state.recipe_book[matching_row_index, 2].astype(jnp.int32)
 
         new_items = state.items.at[result].set(1)
-
         new_items = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), new_items, state.items)
 
         reward = jnp.where(jnp.logical_and(matching_row_index!=999,valid_action), state.recipe_book[matching_row_index, 3], 0.0)
         reward = jnp.where(prev_terminal, 0, reward)
+
+        # check that the item did not already exist
+        item_existed = jnp.logical_and(jnp.logical_and(matching_row_index!=999,valid_action), state.items[result])
+        reward = jnp.where(item_existed, 0, reward)
 
 
         new_held_item= jnp.where(state.held_item==999, action, 999)
@@ -93,7 +96,7 @@ class Base(environment.Environment):
         self, key: chex.PRNGKey, params: EnvParams
     ) -> Tuple[chex.Array, EnvState]:
         """Performs resetting of environment."""
-        recipe_book, items = self.build_recipe_book(key, params)
+        recipe_book, items = self.build_recipe_book(self.key, params)
 
         state = EnvState(
             recipe_book=recipe_book,
@@ -118,4 +121,5 @@ class Base(environment.Environment):
         done_steps = state.time >= (params.max_steps_in_episode*2)
         done = jnp.logical_or(done, done_steps)
         return done
+
 
