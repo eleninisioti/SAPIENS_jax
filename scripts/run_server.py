@@ -76,13 +76,7 @@ def anal_freeway():
                             for connectivity in ["dynamic"]:
                                 write_file(env_name, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial)
 
-def parametric(env_name):
 
-    for num_agents in [5, 10, 20]:
-        for connectivity in ["fully", "dynamic"]:
-            write_file(env_name, num_agents, connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10, trial=0)
-
-    write_file(env_name, 1, connectivity, shared_batch_size=1, prob_visit=0.2, visit_duration=10, trial=0)
 
 
 def parametric(env_name):
