@@ -44,6 +44,13 @@ def display_state(state, step):
     print("------------------------------------------")
 
 
+def get_best_actions(env_name):
+    if env_name == "Single-path-alchemy":
+        actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+    elif env_name == "Merging-paths-alchemy":
+        actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+    return actions
+
 
 def play_episode(game, episode_idx):
 
@@ -65,8 +72,8 @@ def play_episode(game, episode_idx):
     params = env.default_params
 
     print(state.recipe_book)
+    actions = get_best_actions(env_name)
 
-    actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
     #actions = [3, 0]
 
     #actions = [2,0,3,0,4,2,5,2,6,0,7,2,8,1,9,1,12,12,14,12]
@@ -121,4 +128,4 @@ if __name__ == "__main__":
     print("You are the discrete fish robot. \n"
           "You have only four actions: moving left ('a'), moving right ('d'), moving forward ('w') and moving backward ('s').")
 
-    play_game(n_episodes=1, game="Single-path-alchemy")
+    play_game(n_episodes=1, game="Merging-paths-alchemy")

@@ -40,12 +40,13 @@ class Mergingpaths(Base):
         return EnvParams()
 
     def build_recipe_book(self, key, params):
-
         #init_items = jnp.arange(params.n_init_items)
         # make first branch
         n_init_items = 3
         n_total_items = 11*2+4
         max_steps_in_episode = 8
+        items = jax.numpy.zeros((n_total_items,))
+
         recipe = jnp.zeros([max_steps_in_episode, 4]) # first item, second item, result
         key, current_key = jax.random.split(key)
         first_item = jax.random.choice(current_key, n_init_items)
@@ -60,6 +61,8 @@ class Mergingpaths(Base):
             first_item = result
 
         recipe_first = recipe
+        items = items.at[:n_init_items].set(1)
+
         # make second branch
         n_init_items = 3
         max_steps_in_episode = 8
@@ -80,6 +83,7 @@ class Mergingpaths(Base):
             first_item = result
 
         recipe_second = recipe
+        items = items.at[init_items].set(1)
 
         # make middle branch, it will have four elements
         max_steps_in_episode_half = int(max_steps_in_episode/2)
@@ -102,8 +106,7 @@ class Mergingpaths(Base):
 
         recipe = jnp.concatenate([recipe_first, recipe_second, recipe_middle], axis=0)
 
-        items = jax.numpy.zeros((n_total_items,))
-        items = items.at[:n_init_items].set(1)
+
         return recipe, items
 
     @property
