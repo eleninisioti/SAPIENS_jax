@@ -779,10 +779,10 @@ def evaluate(train_state, config):
             agent_rewards.append(onp.sum(ep_reward))
             trajectories["agent_" + str(agent)] = trajectory_steps
 
-            with open(save_dir + "/rewards.txt", "a") as f:
+            with open(save_dir + "/rewards_" + str(trial) +  ".txt", "a") as f:
                 f.write(str(ep_reward) + ",\n")
 
-            with open(save_dir + "/traj.pkl", "wb") as f:
+            with open(save_dir + "/traj_" + str(trial) +  ".pkl", "wb") as f:
                 pickle.dump([env, env_params, state_seq, ep_reward], f)
 
             #if config["local_mode"]:
@@ -807,7 +807,6 @@ def evaluate(train_state, config):
             final_eval_metrics[key + "_mean"].append(onp.mean([el[step] for el in val]))
             final_eval_metrics[key + "_var"].append(onp.var([el[step] for el in val]))
 
-        temp = {key: value[-1] for key, value in final_eval_metrics.items()}
         wandb.log({key: value[-1] for key, value in final_eval_metrics.items()})
 
     return final_eval_perf, final_eval_metrics
