@@ -839,7 +839,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "NUM_CHECKPOINTS": 20, # we will save intermediate states for computing metrics during evaluation (eg conformity)
         "EPSILON_START": e_start,
         "EPSILON_END": e_end,
-        "EPSILON_FRACTION": 0.81,
+        "EPSILON_FRACTION": 0.8,
         "TARGET_UPDATE_INTERVAL": 10000,
         "LR": learning_rate,
         "LEARNING_STARTS": 10000,
@@ -965,12 +965,12 @@ if __name__ == "__main__":
     parser.add_argument("--visit_duration", type=int, help="Duration of visit in dynamic networks",default=10)
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
     parser.add_argument("--local_mode", action='store_true')
-
+    parser.add_argument("--learning_rate", type=float, help="Probability of visit in dynamic networks",default=0.2)
 
     args = parser.parse_args()
 
     main(env_name=args.env, num_agents=args.n_agents, connectivity=args.connectivity, shared_batch_size=args.shared_batch_size,
-         prob_visit= args.prob_visit, visit_duration=args.visit_duration, trial=args.trial,  local_mode=args.local_mode)
+         prob_visit= args.prob_visit, visit_duration=args.visit_duration, trial=args.trial,  local_mode=args.local_mode, learning_rate=args.learning_rate)
 
 
 
