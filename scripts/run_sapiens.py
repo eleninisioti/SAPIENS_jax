@@ -22,7 +22,7 @@ def parametric(env_name):
                 eps_end = 0.05
                 for num_agents in [10]:
                     for connectivity in [ "independent" ]:
-                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial, local_mode=True)
+                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial, local_mode=False)
 
 
 
