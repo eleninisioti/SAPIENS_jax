@@ -49,6 +49,8 @@ def get_best_actions(env_name):
         actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
     elif env_name == "Merging-paths-alchemy":
         actions = [2, 0, 3, 0, 11,12,14,13,4,15, 22,0,23,13,24,0,25,2,26,6,27,13,28,1]
+        actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+
     return actions
 
 
@@ -92,7 +94,7 @@ def play_episode(game, episode_idx):
         print(obs)
         obs, state, reward, done, info =  jit_step(key, state, action, params)
         cum_reward += reward
-        print("cum " + str(reward))
+        print("cum " + str(cum_reward) + " " + str(step))
 
 
         #print(action, obs, reward)
