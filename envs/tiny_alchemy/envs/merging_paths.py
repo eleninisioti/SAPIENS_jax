@@ -87,7 +87,7 @@ class Mergingpaths(Base):
 
         # make middle branch, it will have four elements
         max_steps_in_episode_half = int(max_steps_in_episode/2)
-        first_item = jax.random.choice(current_key, jnp.arange((n_init_items+max_steps_in_episode)*2, (n_init_items+max_steps_in_episode)*2 +(n_init_items+max_steps_in_episode_half) ))
+        first_item = (n_init_items+max_steps_in_episode)*2
         recipe = jnp.zeros((max_steps_in_episode, 4)) # first item, second item, result
         reward_init = 16
         recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-2], recipe_second[1][-2], first_item, reward_init]))

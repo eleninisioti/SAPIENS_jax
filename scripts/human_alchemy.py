@@ -48,7 +48,7 @@ def get_best_actions(env_name):
     if env_name == "Single-path-alchemy":
         actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
     elif env_name == "Merging-paths-alchemy":
-        actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+        actions = [2, 0, 3, 0, 11,12,14,13,4,15, 22,0,23,13,24,0,25,2,26,6,27,13,28,1]
     return actions
 
 
