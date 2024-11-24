@@ -3,11 +3,11 @@ sys.path.append(os.getcwd())
 from datetime import datetime
 import os
 
-def write_file(env, num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial):
+def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, prob_visit, visit_duration, trial):
     top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/"
     current_date = datetime.today().strftime('%Y_%m_%d')
     name = ("/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_shared_batch_" + str(shared_batch_size)
-            + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration)+ "_trial_" + str(trial))
+            + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_lr_" + str(learning_rate) + "_trial_" + str(trial))
 
     file_name = (top_dir + "jz_scripts/" + current_date + name + ".slurm")
 
@@ -33,7 +33,7 @@ def write_file(env, num_agents, connectivity, shared_batch_size, prob_visit, vis
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
-        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " -- shared_batch_size " + str(shared_batch_size)
+        command = "python sapiens//sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " -- shared_batch_size " + str(shared_batch_size) + " --leanring_rate " + str(learning_rate)
         file.write(command+ "\n")
 
 
@@ -82,11 +82,11 @@ def anal_freeway():
 def parametric(env_name):
 
     for num_agents in [10]:
-        for connectivity in [ "dynamic"]:
-            for trial in range(10):
-                write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial)
-    write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
-         visit_duration=10, connectivity="fully", trial=0)
+        for connectivity in [ "independent"]:
+            for trial in range(1):
+                write_file(env_name, num_agents=num_agents, learning_rate=0.0001,connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial)
+    #write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
+    #     visit_duration=10, connectivity="fully", trial=0)
 
 
 
