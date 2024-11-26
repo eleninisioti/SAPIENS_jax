@@ -90,5 +90,7 @@ def parametric(env_name):
 
 
 if __name__ == "__main__":
-    env_name ="Mergins-paths-alchemy"
+    env_name ="Single-path-alchemy"
+    env_name ="Merging-paths-alchemy"
+
     parametric(env_name)
