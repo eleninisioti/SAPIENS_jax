@@ -838,7 +838,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "NUM_CHECKPOINTS": 20, # we will save intermediate states for computing metrics during evaluation (eg conformity)
         "EPSILON_START": e_start,
         "EPSILON_END": e_end,
-        "EPSILON_FRACTION": 0.8,
+        "EPSILON_FRACTION": 0.2,
         "TARGET_UPDATE_INTERVAL": 10000,
         "LR": learning_rate,
         "LEARNING_STARTS": 10000,
