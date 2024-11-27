@@ -105,6 +105,8 @@ def play_episode(game, episode_idx):
             print(cum_reward)
             break
 
+    print(step)
+
 
     saving_dir = "projects/human/game_" + str(game) + "/episode_" + str(episode_idx) + "/visuals/"
     if not os.path.exists(saving_dir):
