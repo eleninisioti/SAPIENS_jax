@@ -17,7 +17,7 @@ class EnvState:
 
 @struct.dataclass
 class EnvParams:
-    max_steps_in_episode: int = 8
+    max_steps_in_episode: int = 10
     n_init_items: int = 6
     n_total_items: int = 26
 
