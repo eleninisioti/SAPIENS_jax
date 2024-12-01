@@ -14,6 +14,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
     if not os.path.exists(top_dir + "jz_scripts/" + current_date):
         os.makedirs(top_dir + "jz_scripts/" + current_date)
 
+    print(file_name)
     # Open the file in write mode
     with open(file_name, "w") as file:
 
