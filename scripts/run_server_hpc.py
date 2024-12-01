@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, prob_visit, visit_duration, trial):
-    top_dir = "."
+    top_dir = ""
     current_date = datetime.today().strftime('%Y_%m_%d')
     name = ("/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_shared_batch_" + str(shared_batch_size)
             + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_lr_" + str(learning_rate) + "_trial_" + str(trial))
