@@ -32,7 +32,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
 
         file.write("module load Anaconda3 "+ "\n")
         file.write("conda activate sapiens "+ "\n")
-        file.write("/home/enis/.bashrc"+ "\n")
+        file.write("source /home/enis/.bashrc"+ "\n")
 
 
         file.write("")
