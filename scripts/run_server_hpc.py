@@ -30,7 +30,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
         error_file = name  + "%j.err"
         file.write("#SBATCH --error=" + top_dir + "jz_logs" + error_file+ "\n")
 
-        file.write("module load module load Anaconda3 "+ "\n")
+        file.write("module load Anaconda3 "+ "\n")
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
