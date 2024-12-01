@@ -32,6 +32,8 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
 
         file.write("module load Anaconda3 "+ "\n")
         file.write("conda activate sapiens "+ "\n")
+        file.write("/home/enis/.bashrc"+ "\n")
+
 
         file.write("")
         command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size) + " --learning_rate " + str(learning_rate) + " --local_mode"
