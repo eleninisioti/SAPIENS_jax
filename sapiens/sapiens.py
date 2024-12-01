@@ -815,7 +815,7 @@ def evaluate(train_state, config):
 
 def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial, learning_rate, local_mode=False):
     project_name =  "/sapiens_env" + env_name + "_conn_" + str(connectivity) + "_shared_batch_" + str(shared_batch_size) + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_n_" + str(
-        num_agents) + "_trial_" + str(trial) + "_lr_" + str(learning_rate) + "_ep_10"
+        num_agents) + "_trial_" + str(trial) + "_lr_" + str(learning_rate) + "_ep_10_bugger_25000"
     e_start = 1.0
     e_end = 0.05
 
@@ -830,7 +830,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     config = {
         "NUM_AGENTS": num_agents,
-        "BUFFER_SIZE": 5000,
+        "BUFFER_SIZE": 25_000,
         "BUFFER_BATCH_SIZE": 256, # 64
         "SHARED_BATCH_SIZE": shared_batch_size,
         "CONNECTIVITY": connectivity,
