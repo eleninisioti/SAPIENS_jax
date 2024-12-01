@@ -830,7 +830,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     config = {
         "NUM_AGENTS": num_agents,
-        "BUFFER_SIZE": 25_000,
+        "BUFFER_SIZE": 5_000,
         "BUFFER_BATCH_SIZE": 256, # 64
         "SHARED_BATCH_SIZE": shared_batch_size,
         "CONNECTIVITY": connectivity,
