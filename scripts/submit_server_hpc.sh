@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Specify the directory containing the batch job files
-job_dir="."
+job_dir="jz_scripts/2024_12_01"
 
 # Check if the directory exists
 if [ ! -d "$job_dir" ]; then
