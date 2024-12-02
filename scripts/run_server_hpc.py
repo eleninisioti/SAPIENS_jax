@@ -24,7 +24,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
         #file.write("#SBATCH -A imi@cpu" + "\n")
         file.write("#SBATCH --time=05:00:00"+ "\n")
         file.write("#SBATCH --cpus-per-task=8"+ "\n")
-        file.write("#SBATCH --gres=gpu " + "\n")
+        file.write("#SBATCH --gres=gpu:v100 " + "\n")
         #
 
         #file.write("#SBATCH --partition=actlr"+ "\n")
