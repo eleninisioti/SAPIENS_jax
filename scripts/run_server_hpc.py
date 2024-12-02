@@ -24,6 +24,9 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
         #file.write("#SBATCH -A imi@cpu" + "\n")
         file.write("#SBATCH --time=05:00:00"+ "\n")
         file.write("#SBATCH --cpus-per-task=8"+ "\n")
+        file.write("#SBATCH --gres=gpu " + "\n")
+        #
+
         #file.write("#SBATCH --partition=actlr"+ "\n")
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
