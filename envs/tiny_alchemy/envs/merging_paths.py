@@ -88,7 +88,7 @@ class Mergingpaths(Base):
         max_steps_in_episode_half = int(max_steps_in_episode/2)
         first_item = (n_init_items+max_steps_in_episode)*2
         recipe = jnp.zeros((max_steps_in_episode, 4)) # first item, second item, result
-        reward_init = 16
+        reward_init = 8
         recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-2], recipe_second[1][-2], first_item, reward_init]))
 
         total_init_items = jnp.concatenate([jnp.arange(n_init_items), init_items], axis=0)
