@@ -892,7 +892,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         yaml.dump(config, f)
 
     if local_mode:
-        wandb_mode = "offline"
+        wandb_mode = "online"
 
     else:
         wandb_mode = "offline"
