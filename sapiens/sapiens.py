@@ -826,7 +826,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
                        "Single-path-alchemy": 1e6,
-                       "Merging-paths-alchemy": 4e3,
+                       "Merging-paths-alchemy": 2e6,
                        "Bestoften-paths-alchemy": 8e7
                        }
 

@@ -21,7 +21,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
         job_name = name
         file.write("#SBATCH --job-name=" + job_name + "\n")
         file.write("#SBATCH -A imi@cpu" + "\n")
-        file.write("#SBATCH --time=00:20:00"+ "\n")
+        file.write("#SBATCH --time=20:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
@@ -81,7 +81,7 @@ def anal_freeway():
 def parametric(env_name):
 
     for num_agents in [10]:
-        for connectivity in [ "dynamic"]:
+        for connectivity in [ "dynamic", "independent", "fully"]:
             for trial in range(10):
                 write_file(env_name, num_agents=num_agents, learning_rate=0.0001,connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10,  trial=trial)
     #write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
