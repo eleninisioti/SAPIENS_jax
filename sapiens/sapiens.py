@@ -826,7 +826,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
                        "Single-path-alchemy": 1e6,
-                       "Merging-paths-alchemy": 4e6,
+                       "Merging-paths-alchemy": 4e3,
                        "Bestoften-paths-alchemy": 8e7
                        }
 
@@ -893,10 +893,11 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     if local_mode:
         wandb_mode = "online"
+        wandb_dir = "."
 
     else:
         wandb_mode = "offline"
-        os.environ['WANDB_DIR'] = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
+        wandb_dir= "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
 
 
     wandb.init(
@@ -905,7 +906,8 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
         name=project_name,
         config=config,
-        mode=wandb_mode
+        mode=wandb_mode,
+        dir=wandb_dir
     )
 
     rng = jax.random.PRNGKey(config["SEED"])

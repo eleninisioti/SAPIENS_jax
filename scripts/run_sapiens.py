@@ -14,7 +14,7 @@ def parametric(env_name):
     eps_start_values = [ 1]
     eps_end_values = [0.05]
 
-    for trial in range(5,10):
+    for trial in range(10):
 
         for lr in lr_values:
             for eps_start in eps_start_values:
