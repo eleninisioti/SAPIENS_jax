@@ -45,6 +45,7 @@ def display_state(state, step):
     print("------------------------------------------")
 
 
+#actions_merging = jnp.array([[],[]])
 
 def play_episode(game, episode_idx):
 
@@ -56,7 +57,7 @@ def play_episode(game, episode_idx):
     states = []
     jit_reset =jax.jit(env.reset)
     #jit_reset =env.reset
-    key =random.PRNGKey(episode_idx+1)
+    key =random.PRNGKey(episode_idx)
     obs, state = jit_reset(key)
 
     cum_reward = 0
@@ -66,7 +67,7 @@ def play_episode(game, episode_idx):
     params = env.default_params
 
 
-    for step in range(1,episode_length+1):
+    for step in range(episode_length):
 
         #action = jnp.array(input_char('Choose your move:'))
 
@@ -122,4 +123,4 @@ if __name__ == "__main__":
     print("You are the discrete fish robot. \n"
           "You have only four actions: moving left ('a'), moving right ('d'), moving forward ('w') and moving backward ('s').")
 
-    play_game(n_episodes=1, game="Single-path")
+    play_game(n_episodes=1, game="Merging-paths-alchemy")

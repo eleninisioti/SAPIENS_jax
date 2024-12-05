@@ -27,7 +27,7 @@ class Mergingpaths(Base):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, key,recipe="single-path"):
+    def __init__(self, key, recipe="single-path"):
         super().__init__(key)
         self.episode_length = 16
         self.obs_shape = (14,)
@@ -97,7 +97,7 @@ class Mergingpaths(Base):
             key, current_key = jax.random.split(key)
             second_item = jax.random.choice(current_key, total_init_items)
             result = step + 2*n_init_items +max_steps_in_episode*2
-            reward = reward_init + (step+1)*2
+            reward = reward_init + (step)*2
             new_comb = jnp.array([first_item, second_item, result,reward ])
             recipe = recipe.at[step].set(new_comb)
             first_item = result
