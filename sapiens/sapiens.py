@@ -830,9 +830,16 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
                        "Bestoften-paths-alchemy": 8e7
                        }
 
+
+    buffer_size = 25_000
+    if connectivity == "fully":
+        buffer_scale = num_agents
+    else:
+        buffer_scale = 1 # maybe here I want to scale dynamic by 2?
+
     config = {
         "NUM_AGENTS": num_agents,
-        "BUFFER_SIZE": 25_000,
+        "BUFFER_SIZE": buffer_size*buffer_scale,
         "BUFFER_BATCH_SIZE": 256, # 64
         "SHARED_BATCH_SIZE": shared_batch_size,
         "CONNECTIVITY": connectivity,
