@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import chex
 import flax
-import wandb
+#import wandb
 import optax
 import flax.linen as nn
 from flax.training.train_state import TrainState
