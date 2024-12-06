@@ -836,7 +836,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     e_start = 1.0
     e_end = 0.05
 
-    wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
+    #wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
 
 
     total_timesteps = {"CartPole-v1": 8e5,
