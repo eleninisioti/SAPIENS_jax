@@ -542,10 +542,10 @@ def make_train(config):
             if config.get("WANDB_MODE", "disabled") == "online":
 
                 def callback(metrics, neighbors):
-                    if metrics["timesteps"] % 100 == 0:
-                        wandb.log(metrics)
+                    #if metrics["timesteps"] % 100 == 0:
+                        #wandb.log(metrics)
 
-                        print("current step " + str(metrics["timesteps"]))
+                    print("current step " + str(metrics["timesteps"]))
 
                     # Create the heatmap
                     """
@@ -923,6 +923,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         wandb_mode = "offline"
         wandb_dir= "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
 
+    print(wandb_mode)
 
     wandb.init(
         entity=config["ENTITY"],
