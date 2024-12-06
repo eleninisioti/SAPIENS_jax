@@ -26,6 +26,7 @@ import yaml
 from envs.tiny_alchemy import envs as alchemy_envs
 from jax.experimental import io_callback
 from collections import Counter
+import seaborn as sns
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -533,17 +534,33 @@ def make_train(config):
                 "diversity_mean": train_state.buffer_diversity.mean(),
                 "diversity_max": train_state.buffer_diversity.max(),
                 "diversity_proper_mean": train_state.buffer_diversity_proper.mean(),
-                "diversity_proper_max": train_state.buffer_diversity_proper.max()
+                "diversity_proper_max": train_state.buffer_diversity_proper.max(),
+
             }
 
             # report on wandb if required
             if config.get("WANDB_MODE", "disabled") == "online":
 
-                def callback(metrics):
+                def callback(metrics, neighbors):
                     if metrics["timesteps"] % 100 == 0:
                         wandb.log(metrics)
 
-                jax.debug.callback(callback, metrics)
+                        print("current step " + str(metrics["timesteps"]))
+
+                    # Create the heatmap
+                    """
+                    plt.figure(figsize=(8, 6))  # Optional: adjust figure size
+                    sns.heatmap(onp.array(neighbors), annot=True, fmt="d", cmap="YlGnBu", cbar=True)
+                    plt.savefig(config["project_dir"] + "/step_" + str(metrics["timesteps"]) + ".png")
+                    plt.clf()
+                    """
+
+                    #wandb.log({"neighbors": wandb.Image(})
+
+
+
+
+                jax.debug.callback(callback, metrics, train_state.neighbors)
 
             #env_state = jax.tree_map(lambda x: jnp.expand_dims(x, -1),env_state)
 
