@@ -880,7 +880,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "ENV_NAME": env_name,
         "SEED": trial,
         "NUM_SEEDS": 1,
-        "WANDB_MODE": "online",  # set to online to activate wandb
+        #"WANDB_MODE": "online",  # set to online to activate wandb
         "ENTITY": "eleni",
         "PROJECT": "sapiens",
         "FIXED_KEY": jax.random.PRNGKey(trial),
@@ -925,6 +925,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     print(wandb_mode)
 
+    """
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
@@ -934,6 +935,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         mode=wandb_mode,
         dir=wandb_dir
     )
+    """
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
