@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import chex
 import flax
-#import wandb
+import wandb
 import optax
 import flax.linen as nn
 from flax.training.train_state import TrainState
@@ -556,23 +556,11 @@ def make_train(config):
             #if config.get("WANDB_MODE", "disabled") == "online":
 
             def callback(metrics, neighbors, visiting):
-                if metrics["timesteps"] % 1 == 0:
-                    #wandb.log(metrics)
+                if metrics["timesteps"] % 100 == 0:
+                    wandb.log(metrics)
 
                     print("current step " + str(metrics["timesteps"]))
                     print(metrics["returns_max"])
-
-                    with open(config["project_dir"] + "/neighbors/step_" + str(metrics["timesteps"]) + ".pkl",
-                              "wb") as f:
-                        pickle.dump(onp.array(neighbors), f)
-
-                    with open(config["project_dir"] + "/visiting/step_" + str(metrics["timesteps"]) + ".pkl",
-                              "wb") as f:
-                        pickle.dump(onp.array(visiting), f)
-
-                    with open(config["project_dir"] + "/metrics/step_" + str(metrics["timesteps"]) + ".pkl",
-                              "wb") as f:
-                        pickle.dump(onp.array(metrics), f)
 
 
 
@@ -859,7 +847,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     e_start = 1.0
     e_end = 0.05
 
-    #wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
+    wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
 
 
     total_timesteps = {"CartPole-v1": 8e5,
