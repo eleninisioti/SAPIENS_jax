@@ -392,37 +392,37 @@ def make_train(config):
             def is_visit_time(buffer_state, train_state, key):
 
                 value = (
-                        (buffer.can_sample(buffer_state))
-                        & (  # enough experience in buffer
-                                train_state.timesteps > config["LEARNING_STARTS"]
+                        #(buffer.can_sample(buffer_state))
+                        #&
+                        (  # enough experience in buffer
+                                train_state.timesteps[0] > config["LEARNING_STARTS"]
                         )
+
                         & (  # pure exploration phase ended
                                jax.random.uniform(key) < config["PROB_VISIT"]
                         )  # training interval
                         & (  # pure exploration phase ended
-                                jnp.logical_not(train_state.visiting)
+                                jnp.prod(jnp.logical_not(train_state.visiting))
                         )  # training interval
                         & (  # pure exploration phase ended
                             config["CONNECTIVITY"] == "dynamic"
                         )  # training interval
 
                 )
-                return  value
+                return value
 
-            def is_return_time(buffer_state, train_state, key):
+            def is_return_time( train_state):
                 # START HERE
                 value = (
-                        (buffer.can_sample(buffer_state))
-                        & (  # enough experience in buffer
-                                train_state.timesteps > config["LEARNING_STARTS"]
-                        )
-                        & (  # pure exploration phase ended
-                            train_state.timesteps == train_state.visiting + config["VISIT_DURATION"]
+                    (train_state.visiting > 0)
+                     &
+                         (  # pure exploration phase ended
+                            train_state.timesteps > (train_state.visiting + 100)
                         )  # training interval
-                        & (  # pure exploration phase ended
-                                config["CONNECTIVITY"] == "dynamic"
-                        )  # training interval
+
                 )
+
+                #value = True
                 return  value
 
 
@@ -448,7 +448,7 @@ def make_train(config):
                 # current neighbors of agent about to take a visit
                 prev_neighbors = train_state.neighbors # just for keeping
 
-                # new neighbors of agent about to a visit
+                # new neighbors of agent about to take a visit
                 second_neighbor = train_state.neighbors[to_visit][0]
                 new_neighbors = jnp.concatenate([jnp.array([second_neighbor]), jnp.array([to_visit])], axis=0)
                 updated_neighbors = prev_neighbors.at[agent_id].set(new_neighbors)
@@ -459,10 +459,17 @@ def make_train(config):
                 update_neighbors = jnp.concatenate([jnp.array([to_visit]), jnp.array([agent_id]) ],axis=0)
                 updated_neighbors = updated_neighbors.at[second_neighbor].set(update_neighbors)
 
-                train_state = train_state.replace(neighbors=updated_neighbors, keep_neighbors=prev_neighbors, visiting=train_state.timesteps)
+                #  neighbors losing their current neighbor
+                current_neighbors = train_state.neighbors[agent_id][0]
+                updated_neighbors = updated_neighbors.at[current_neighbors].set(-1)
+
+                new_visiting = train_state.visiting.at[agent_id].set(train_state.timesteps[agent_id])
+                train_state = train_state.replace(neighbors=updated_neighbors, keep_neighbors=prev_neighbors, visiting=new_visiting)
                 return train_state
 
             def _check_visit(is_visit_time, train_state, key, agent_id):
+
+
                 train_state = jax.lax.cond(is_visit_time,
                                            lambda train_state, key, agent_id: _implement_visit(train_state, key, agent_id),
                                            lambda train_state, _, agent_id: train_state, train_state, key, agent_id)
@@ -470,7 +477,8 @@ def make_train(config):
 
 
             def _implement_return(train_state):
-                train_state = train_state.replace(neighbors=train_state.keep_neighbors, visiting=jnp.zeros_like(train_state.visiting))
+                temp = 0*jnp.ones_like(train_state.visiting)
+                train_state = train_state.replace(neighbors=train_state.keep_neighbors,visiting=temp)
                 return train_state
 
 
@@ -483,17 +491,23 @@ def make_train(config):
 
             # implement visits
             if config["CONNECTIVITY"] == "dynamic":
-                is_visit_time = jax.vmap(is_visit_time)(buffer_state, train_state, _rng_group)
+                is_visit_time = jax.vmap(is_visit_time, in_axes=(0, None, 0))(buffer_state, train_state, _rng_group)
+                is_visit_time = jnp.sum(is_visit_time)
+                #is_visit_time = 0
                 agents = jnp.arange(config["NUM_AGENTS"])
                 _rng, visit_key = jax.random.split(_rng)
                 to_visit = jax.random.choice(visit_key, agents)
                 _rng, visit_key = jax.random.split(_rng)
                 visitor_id = jax.random.choice(visit_key, agents)
-                train_state = _check_visit(is_visit_time[0], train_state, visitor_id, to_visit)
+                #visitor_id = 0
+                #to_visit= 2
+                train_state = _check_visit(is_visit_time, train_state, visitor_id, to_visit)
                 #train_state = train_state.replace(visiting=is_visit_time[0])
+                temp = jax.vmap(is_return_time)( train_state)
+                is_return_time = jnp.sum(temp)
 
-                is_return_time = jax.vmap(is_return_time)(buffer_state, train_state, _rng_group)
-                train_state = _return_visit(is_return_time[0], train_state)
+                #is_return_time = 0
+                train_state = _return_visit(is_return_time, train_state)
 
             #train_state = jax.vmap(_check_visit, in_axes=(0, None,0,0))(is_visit_time, train_state, _rng_group, agent_ids)
 
@@ -539,28 +553,37 @@ def make_train(config):
             }
 
             # report on wandb if required
-            if config.get("WANDB_MODE", "disabled") == "online":
+            #if config.get("WANDB_MODE", "disabled") == "online":
 
-                def callback(metrics, neighbors):
-                    #if metrics["timesteps"] % 100 == 0:
-                        #wandb.log(metrics)
+            def callback(metrics, neighbors, visiting):
+                if metrics["timesteps"] % 1 == 0:
+                    #wandb.log(metrics)
 
                     print("current step " + str(metrics["timesteps"]))
+                    print(metrics["returns_max"])
 
-                    # Create the heatmap
-                    """
-                    plt.figure(figsize=(8, 6))  # Optional: adjust figure size
-                    sns.heatmap(onp.array(neighbors), annot=True, fmt="d", cmap="YlGnBu", cbar=True)
-                    plt.savefig(config["project_dir"] + "/step_" + str(metrics["timesteps"]) + ".png")
-                    plt.clf()
-                    """
+                    with open(config["project_dir"] + "/neighbors/step_" + str(metrics["timesteps"]) + ".pkl",
+                              "wb") as f:
+                        pickle.dump(onp.array(neighbors), f)
+
+                    with open(config["project_dir"] + "/visiting/step_" + str(metrics["timesteps"]) + ".pkl",
+                              "wb") as f:
+                        pickle.dump(onp.array(visiting), f)
+
+                    with open(config["project_dir"] + "/metrics/step_" + str(metrics["timesteps"]) + ".pkl",
+                              "wb") as f:
+                        pickle.dump(onp.array(metrics), f)
+
+
+
+
 
                     #wandb.log({"neighbors": wandb.Image(})
 
 
 
 
-                jax.debug.callback(callback, metrics, train_state.neighbors)
+            jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
 
             #env_state = jax.tree_map(lambda x: jnp.expand_dims(x, -1),env_state)
 
@@ -867,7 +890,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "EPSILON_FRACTION": 0.2,
         "TARGET_UPDATE_INTERVAL": 10000,
         "LR": learning_rate,
-        "LEARNING_STARTS": 10000,
+        "LEARNING_STARTS": 10,
         "TRAINING_INTERVAL": 4,
         "DIVERSITY_INTERVAL": 100,
         "MAX_DIVERSITY": 5000,
@@ -905,8 +928,12 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     project_dir  = top_dir +  datetime.today().strftime(
         '%Y_%m_%d') + "/" + project_name
 
-    if not os.path.exists(project_dir):
-        os.makedirs(project_dir)
+    if not os.path.exists(project_dir+ "/neighbors"):
+        os.makedirs(project_dir + "/neighbors")
+        os.makedirs(project_dir + "/visiting")
+        os.makedirs(project_dir + "/metrics")
+
+
 
     config["project_dir"] = project_dir
 
