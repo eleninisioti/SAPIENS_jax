@@ -878,7 +878,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "EPSILON_FRACTION": 0.2,
         "TARGET_UPDATE_INTERVAL": 10000,
         "LR": learning_rate,
-        "LEARNING_STARTS": 10,
+        "LEARNING_STARTS": 10000,
         "TRAINING_INTERVAL": 4,
         "DIVERSITY_INTERVAL": 100,
         "MAX_DIVERSITY": 5000,
@@ -940,7 +940,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     print(wandb_mode)
 
-    """
+
     wandb.init(
         entity=config["ENTITY"],
         project=config["PROJECT"],
@@ -950,7 +950,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         mode=wandb_mode,
         dir=wandb_dir
     )
-    """
+
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
