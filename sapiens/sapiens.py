@@ -417,15 +417,13 @@ def make_train(config):
                     (train_state.visiting > 0)
                      &
                          (  # pure exploration phase ended
-                            train_state.timesteps > (train_state.visiting + 100)
+                            train_state.timesteps > (train_state.visiting + config["VISIT_DURATION"])
                         )  # training interval
 
                 )
 
                 #value = True
                 return  value
-
-
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = jax.vmap(is_learn_time)(buffer_state, train_state)
@@ -562,8 +560,17 @@ def make_train(config):
                     print("current step " + str(metrics["timesteps"]))
                     print(metrics["returns_max"])
 
+                    save_dir = config["project_dir"] + "/neighbors"
+                    if not os.path.exists(save_dir):
+                        os.makedirs(save_dir)
+                    with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
+                        pickle.dump(neighbors, f)
 
-
+                    save_dir = config["project_dir"] + "/visiting"
+                    if not os.path.exists(save_dir):
+                        os.makedirs(save_dir)
+                    with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
+                        pickle.dump(visiting, f)
 
 
                     #wandb.log({"neighbors": wandb.Image(})

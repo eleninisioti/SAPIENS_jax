@@ -80,11 +80,14 @@ def anal_freeway():
 
 def parametric(env_name):
 
-    for num_agents in [10]:
-        for connectivity in [ "dynamic"]:
-            for trial in range(10):
-                write_file(env_name, num_agents=num_agents, learning_rate=0.0001,connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=10*16,  trial=trial)
-    #write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
+    for trial in range(10):
+        write_file(env_name, num_agents=10, learning_rate=0.0001,connectivity="indepedendent", shared_batch_size=1, prob_visit=0.01, visit_duration=10*16,  trial=trial)
+        for visit_duration in [10, 80, 160, 320]:
+            write_file(env_name, num_agents=10, learning_rate=0.0001, connectivity="dynamic", shared_batch_size=1,
+                       prob_visit=0.01, visit_duration=visit_duration, trial=trial)
+
+
+#write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
     #     visit_duration=10, connectivity="fully", trial=0)
 
 
