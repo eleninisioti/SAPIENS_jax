@@ -10,7 +10,7 @@ def check_neighbors():
     num_steps = 500
     num_agents = 10
     neighbors = [onp.zeros((num_steps, 2)) for _ in range(num_agents)]
-    for step in range(num_steps, 100):
+    for step in range(100,num_steps, 100):
         with open(project_dir + "/neighbors/step_" + str(step) + ".pkl", "rb") as f:
             step_neighbors = pickle.load(f)
             for row in range(step_neighbors.shape[0]):
@@ -30,7 +30,7 @@ def check_visiting():
     num_steps = 500
     num_agents = 10
     neighbors = [onp.zeros((num_steps, )) for _ in range(num_agents)]
-    for step in range(num_steps):
+    for step in range(100,num_steps,100):
         with open(project_dir + "/visiting/step_" + str(step) + ".pkl", "rb") as f:
             step_neighbors = pickle.load(f)
             for row in range(step_neighbors.shape[0]):
