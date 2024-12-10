@@ -7,7 +7,7 @@ project_dir = "projects/2024_12_08/sapiens_envMerging-paths-alchemy_conn_dynamic
 project_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/projects/2024_12_09/sapiens_envMerging-paths-alchemy_conn_dynamic_shared_batch_1_prob_visit_0.01_visit_dur_320_n_10_trial_0_lr_0.0001_rew_8"
 def check_neighbors():
 
-    num_steps = 500
+    num_steps = 50000
     num_agents = 10
     neighbors = [onp.zeros((num_steps, 2)) for _ in range(num_agents)]
     for step in range(100,num_steps, 100):
@@ -27,7 +27,7 @@ def check_neighbors():
 
 def check_visiting():
 
-    num_steps = 500
+    num_steps = 50000
     num_agents = 10
     neighbors = [onp.zeros((num_steps, )) for _ in range(num_agents)]
     for step in range(100,num_steps,100):
