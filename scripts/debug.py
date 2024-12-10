@@ -40,8 +40,8 @@ def check_visiting():
     for agent in range(len(neighbors)):
         plt.plot(range(num_steps), neighbors[agent], label="agent_" + str(agent))
         temp = onp.array(neighbors[agent])
-    plt.savefig(project_dir + "/visiting_agent_" + str(agent) + ".png")
-    plt.clf()
+        plt.savefig(project_dir + "/visiting_agent_" + str(agent) + ".png")
+        plt.clf()
 
 
 def check_metrics():
