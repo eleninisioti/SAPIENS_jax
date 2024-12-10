@@ -81,7 +81,7 @@ def anal_freeway():
 def parametric(env_name):
 
     for trial in range(10):
-        for visit_duration in [ 160]:
+        for visit_duration in [ 10,80, 320]:
             write_file(env_name, num_agents=10, learning_rate=0.0001, connectivity="dynamic", shared_batch_size=1,
                        prob_visit=0.01, visit_duration=visit_duration, trial=trial)
 
