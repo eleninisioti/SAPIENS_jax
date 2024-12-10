@@ -16,7 +16,9 @@ def check_neighbors():
             for row in range(step_neighbors.shape[0]):
                 neighbors[row][step,...] = step_neighbors[row]
 
-                print("agent " + str(row) + " has neighbors " + str(step_neighbors[row]))
+                with open(project_dir + "/visit_log.txt", "a") as file:
+
+                    print("agent " + str(row) + " has neighbors " + str(step_neighbors[row]), file=file)
 
     for agent in range(len(neighbors)):
         plt.plot(range(num_steps), neighbors[agent][...,0], label="neighbor_1")
