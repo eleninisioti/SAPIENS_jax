@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(".")
 sys.path.append("envs")
-
+import sys
 from sapiens.sapiens import main
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,2"
 sys.path.append("envs")
@@ -52,6 +52,7 @@ if __name__ == "__main__":
     #env_name ="MountainCar-v0"
     env_name = "Merging-paths-alchemy"
     #env_name = "Bestoften-paths-alchemy"
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[1])
 
     #env_name = "Merging-paths"
     parametric(env_name)
