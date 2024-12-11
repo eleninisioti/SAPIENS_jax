@@ -208,23 +208,7 @@ def make_train(config):
             action = action
 
             obs, env_state, reward, done, info = jax.vmap(env.step)(rng_ss, env_state, action)
-            """
-            if config["ENV_TYPE"] == "alchemy":
 
-                rng_temp = jnp.array([config["FIXED_KEY"] for el in range(config["NUM_AGENTS"] )])
-                _, env_state_reset = jax.vmap(env.reset)(rng_temp)
-            else:
-                _, env_state_reset = jax.vmap(env.reset)(rng_ss)
-
-            def expand_done_to_match(array, done):
-                # Reshape `done` to match the number of leading dimensions of `array`
-                expanded_done = jnp.reshape(done, done.shape + (1,) * (array.ndim - 1))
-                # Broadcast `done` to the shape of `array`
-                return jnp.broadcast_to(expanded_done, array.shape)
-
-            new_env_state = jax.tree_util.tree_map(lambda a,b: jnp.where(expand_done_to_match(a, done), a,b), env_state_reset.env_state, env_state.env_state)
-            #env_state = env_state.replace(env_state=new_env_state)
-            """
 
             train_state = train_state.replace(
                 timesteps=train_state.timesteps + 1
@@ -600,7 +584,7 @@ def make_train(config):
 
 
 
-            jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
+            #jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
 
             #env_state = jax.tree_map(lambda x: jnp.expand_dims(x, -1),env_state)
 
