@@ -245,30 +245,31 @@ def make_train(config):
                 return exp
 
 
-            def process_agent_share(shared_exp, neighbors):
 
-                dummy_exp = jax.tree_map(lambda x: jnp.take(x, neighbors[0],axis=0), shared_exp)
-
-                def process_neighbor(shared_exp, neighbor):
-                    exp_from_neighbor = jax.tree_map(lambda x: jnp.take(x, neighbor,axis=0), shared_exp)
-
-                    new_exp = jax.lax.cond(neighbor != -1, lambda x: x, lambda x: dummy_exp, exp_from_neighbor)
-
-                    return new_exp
+            # each agent samples an experience for all agents
+            group_shared_exp = jax.vmap(sample_buffer)(buffer_state, agent_keys)
 
 
-                new_exp = jax.vmap(process_neighbor, in_axes=(None, 0))(shared_exp, neighbors)
-                return new_exp
+            # we distribute the experiences based on neighborhood
+            def get_exps_for_agent(group_shared_exp, receiver_id):
+                agent_neighbors = jnp.take(train_state.neighbors, receiver_id, axis=0)
+                fixed_neighbor = agent_neighbors[0]
 
+                dummy_exp = jax.tree_map(lambda x: jnp.take(jnp.take(x, fixed_neighbor, axis=0), receiver_id, axis=0),
+                                         group_shared_exp)
 
+                def get_exp_from_neighbor(neighbor_id):
+                    received_exp = jax.tree_map(
+                        lambda x: jnp.take(jnp.take(x, neighbor_id, axis=0), receiver_id, axis=0),
+                        group_shared_exp)
+                    received_exp = jax.lax.cond(neighbor_id == -1, lambda x: dummy_exp, lambda x: x, received_exp)
+                    return received_exp
 
-            shared_exp = jax.vmap(sample_buffer)(buffer_state, agent_keys)
+                received_exp = jax.vmap(get_exp_from_neighbor)(agent_neighbors)
 
+                return received_exp
 
-            shared_exp = jax.vmap(process_agent_share)(shared_exp, train_state.neighbors)
-
-
-
+            shared_exp = jax.vmap(get_exps_for_agent, in_axes=(None, 0))(group_shared_exp, jnp.arange(config["NUM_AGENTS"]))
             shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
             total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
 
