@@ -784,6 +784,10 @@ def evaluate(train_state, config):
         env = FlattenObservationWrapper(basic_env)
         env = LogWrapper(env)
 
+        jit_step = jax.jit(env.step)
+        jit_reset = jax.jit(env.reset)
+
+
         network = QNetwork(action_dim=env.action_space(env_params).n)
         agent_rewards = []
         trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
@@ -798,9 +802,9 @@ def evaluate(train_state, config):
             agent_params = jax.tree_map(lambda x: x[agent], train_state.params)
 
             if config["ENV_TYPE"] == "alchemy":
-                last_obs, env_state = env.reset(config["FIXED_KEY"])
+                last_obs, env_state = jit_reset(config["FIXED_KEY"])
             else:
-                last_obs, env_state = env.reset(agent_key)
+                last_obs, env_state = jit_reset(agent_key)
 
             done = False
             ep_reward = []
@@ -815,7 +819,7 @@ def evaluate(train_state, config):
                 trajectory_steps.append({"obs": last_obs, "action": action, "inventory": env_state.env_state.items})
 
                 key, key_act = jax.random.split(key)
-                last_obs, env_state, reward, done, info = env.step(key_act, env_state, action)
+                last_obs, env_state, reward, done, info = jit_step(key_act, env_state, action)
                 ep_reward.append(float(reward))
             agent_rewards.append(onp.sum(ep_reward))
             trajectories["agent_" + str(agent)] = trajectory_steps
@@ -909,7 +913,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "PROJECT": "sapiens",
         "FIXED_KEY": jax.random.PRNGKey(trial),
         "project_name": project_name,
-        "num_eval_trials": 10,
+        "num_eval_trials": 2,
         "local_mode": local_mode # if True, evaluation data will be saved locally, otherwise under server SCRATCH
     }
     num_updates = config["TOTAL_TIMESTEPS"]/config["NUM_CHECKPOINTS"]
