@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import chex
 import flax
-import wandb
+import aim
 import optax
 import flax.linen as nn
 from flax.training.train_state import TrainState
@@ -219,6 +219,7 @@ def make_train(config):
 
             timestep = jax.tree_map(lambda x: jnp.expand_dims(x,1), timestep)
 
+
             # add the shared experiencees
             def sample_buffer(buffer_state, rng):
                 keys = jax.random.split(rng, config["NUM_AGENTS"])
@@ -231,33 +232,36 @@ def make_train(config):
 
 
             # each agent samples an experience for all agents
-            group_shared_exp = jax.vmap(sample_buffer)(buffer_state, agent_keys)
 
+            if config["CONNECTIVITY"] != "independent":
+                group_shared_exp = jax.vmap(sample_buffer)(buffer_state, agent_keys)
+                # we distribute the experiences based on neighborhood
+                def get_exps_for_agent(group_shared_exp, receiver_id):
+                    agent_neighbors = jnp.take(train_state.neighbors, receiver_id, axis=0)
+                    fixed_neighbor = agent_neighbors[0]
 
-            # we distribute the experiences based on neighborhood
-            def get_exps_for_agent(group_shared_exp, receiver_id):
-                agent_neighbors = jnp.take(train_state.neighbors, receiver_id, axis=0)
-                fixed_neighbor = agent_neighbors[0]
+                    dummy_exp = jax.tree_map(lambda x: jnp.take(jnp.take(x, fixed_neighbor, axis=0), receiver_id, axis=0),
+                                             group_shared_exp)
 
-                dummy_exp = jax.tree_map(lambda x: jnp.take(jnp.take(x, fixed_neighbor, axis=0), receiver_id, axis=0),
-                                         group_shared_exp)
+                    def get_exp_from_neighbor(neighbor_id):
+                        received_exp = jax.tree_map(
+                            lambda x: jnp.take(jnp.take(x, neighbor_id, axis=0), receiver_id, axis=0),
+                            group_shared_exp)
+                        received_exp = jax.lax.cond(neighbor_id == -1, lambda x: dummy_exp, lambda x: x, received_exp)
+                        return received_exp
 
-                def get_exp_from_neighbor(neighbor_id):
-                    received_exp = jax.tree_map(
-                        lambda x: jnp.take(jnp.take(x, neighbor_id, axis=0), receiver_id, axis=0),
-                        group_shared_exp)
-                    received_exp = jax.lax.cond(neighbor_id == -1, lambda x: dummy_exp, lambda x: x, received_exp)
+                    received_exp = jax.vmap(get_exp_from_neighbor)(agent_neighbors)
+
                     return received_exp
 
-                received_exp = jax.vmap(get_exp_from_neighbor)(agent_neighbors)
+                shared_exp = jax.vmap(get_exps_for_agent, in_axes=(None, 0))(group_shared_exp, jnp.arange(config["NUM_AGENTS"]))
+                shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
+                total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
 
-                return received_exp
+                buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
+            else:
+                buffer_state = jax.vmap(buffer.add)(buffer_state, timestep)
 
-            shared_exp = jax.vmap(get_exps_for_agent, in_axes=(None, 0))(group_shared_exp, jnp.arange(config["NUM_AGENTS"]))
-            shared_exp = jax.tree_map(lambda x: jnp.reshape(x, (x.shape[0], x.shape[1] * x.shape[2], *x.shape[3:])), shared_exp)
-            total_exp = jax.tree_map(lambda x, y: jnp.concatenate([x, y], axis=1),timestep, shared_exp  )
-
-            buffer_state = jax.vmap(buffer.add)(buffer_state, total_exp)
 
             buffer_obs = buffer_state.experience.obs
 
@@ -289,6 +293,7 @@ def make_train(config):
 
             rng, _rng = jax.random.split(rng)
 
+
             is_diversity_time = jax.vmap(_is_diversity_time)(buffer_state, train_state)
             is_diversity_time = is_diversity_time[0]
 
@@ -302,48 +307,8 @@ def make_train(config):
                 train_state,
                 _rng_group,
             )
-            def _is_metrics_time(buffer_state, train_state):
-                value = (
-                        (buffer.can_sample(buffer_state))
-                        &
-                        (  # enough experience in buffer
-                                train_state.timesteps > config["LEARNING_STARTS"]
-                        )
-                        & (  # pure exploration phase ended
-                                train_state.timesteps % config["METRICS_INTERVAL"] == 0
-                        )  # training interval
-                )
-                #value = True
-                return value
 
 
-            def _compute_metrics(train_state):
-
-                def get_proper_diversity(buffer):
-                    buffer = buffer.reshape(-1, buffer.shape[-1])
-
-                    unique = jnp.unique(buffer, axis=0,size=config["MAX_DIVERSITY"], fill_value=0)
-                    unique = jnp.sum(unique, axis=1)
-                    diversity = jnp.sum(jnp.where(unique, 1, 0))
-
-                    return diversity.astype(jnp.float32)
-
-                diversity = jax.vmap(get_proper_diversity)(buffer_obs)
-                train_state = train_state.replace(buffer_diversity_proper=diversity)
-                return train_state
-
-            is_metrics_time = jax.vmap(_is_metrics_time)(buffer_state, train_state)[0]
-
-            rng_group = jax.random.split(rng, config["NUM_AGENTS"])
-            _rng_group = jax.random.split(_rng, config["NUM_AGENTS"])
-
-            train_state = jax.lax.cond(
-                is_metrics_time,
-                lambda train_state, rng: _compute_metrics(train_state),
-                lambda train_state, rng: train_state,  # do nothing
-                train_state,
-                _rng_group,
-            )
 
 
 
@@ -394,6 +359,23 @@ def make_train(config):
                 return  value
 
 
+
+            rng, _rng = jax.random.split(rng)
+            is_learn_time = jax.vmap(is_learn_time)(buffer_state, train_state)
+            is_learn_time = is_learn_time[0]
+
+            rng_group = jax.random.split(rng, config["NUM_AGENTS"])
+            _rng_group = jax.random.split(_rng, config["NUM_AGENTS"])
+
+            train_state, loss = jax.lax.cond(
+                is_learn_time,
+                lambda train_state, rng: jax.vmap(_learn_phase)(train_state, buffer_state, rng_group),
+                lambda train_state, rng: (train_state, jnp.array([0.0]*config["NUM_AGENTS"])),  # do nothing
+                train_state,
+                _rng_group,
+            )
+
+            
             def is_visit_time(buffer_state, train_state, key):
 
                 value = (
@@ -429,22 +411,7 @@ def make_train(config):
 
                 #value = True
                 return  value
-
-            rng, _rng = jax.random.split(rng)
-            is_learn_time = jax.vmap(is_learn_time)(buffer_state, train_state)
-            is_learn_time = is_learn_time[0]
-
-            rng_group = jax.random.split(rng, config["NUM_AGENTS"])
-            _rng_group = jax.random.split(_rng, config["NUM_AGENTS"])
-
-            train_state, loss = jax.lax.cond(
-                is_learn_time,
-                lambda train_state, rng: jax.vmap(_learn_phase)(train_state, buffer_state, rng_group),
-                lambda train_state, rng: (train_state, jnp.array([0.0]*config["NUM_AGENTS"])),  # do nothing
-                train_state,
-                _rng_group,
-            )
-
+                
             def _implement_visit(train_state, agent_id, to_visit):
                 # choose another subgroup
 
@@ -493,10 +460,12 @@ def make_train(config):
 
 
             # implement visits
+
             if config["CONNECTIVITY"] == "dynamic":
                 is_visit_time = jax.vmap(is_visit_time, in_axes=(0, None, 0))(buffer_state, train_state, _rng_group)
                 is_visit_time = jnp.sum(is_visit_time)
                 #is_visit_time = 0
+                
                 agents = jnp.arange(config["NUM_AGENTS"])
                 _rng, visit_key = jax.random.split(_rng)
                 to_visit = jax.random.choice(visit_key, agents)
@@ -512,6 +481,8 @@ def make_train(config):
 
                 #is_return_time = 0
                 train_state = _return_visit(is_return_time, train_state)
+            
+
 
             #train_state = jax.vmap(_check_visit, in_axes=(0, None,0,0))(is_visit_time, train_state, _rng_group, agent_ids)
 
@@ -561,7 +532,10 @@ def make_train(config):
 
             def callback(metrics, neighbors, visiting):
                 if metrics["timesteps"] % 100 == 0:
-                    wandb.log(metrics)
+
+
+                    for key, value in metrics.items():
+                        self.logger_run.track(value, name=key)
 
                     print("current step " + str(metrics["timesteps"]))
                     print(metrics["returns_max"])
@@ -584,7 +558,7 @@ def make_train(config):
 
 
 
-            #jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
+            jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
 
             #env_state = jax.tree_map(lambda x: jnp.expand_dims(x, -1),env_state)
 
@@ -681,6 +655,7 @@ def evaluate(train_state, config):
                     "max_rewards": [],
 
                     }
+
 
 
 
@@ -784,6 +759,8 @@ def evaluate(train_state, config):
         env = FlattenObservationWrapper(basic_env)
         env = LogWrapper(env)
 
+        jit_reset = jax.jit(env.reset)
+        jit_step = jax.jit(env.step)
         network = QNetwork(action_dim=env.action_space(env_params).n)
         agent_rewards = []
         trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
@@ -798,9 +775,9 @@ def evaluate(train_state, config):
             agent_params = jax.tree_map(lambda x: x[agent], train_state.params)
 
             if config["ENV_TYPE"] == "alchemy":
-                last_obs, env_state = env.reset(config["FIXED_KEY"])
+                last_obs, env_state = jit_reset(config["FIXED_KEY"])
             else:
-                last_obs, env_state = env.reset(agent_key)
+                last_obs, env_state = jit_reset(agent_key)
 
             done = False
             ep_reward = []
@@ -815,7 +792,7 @@ def evaluate(train_state, config):
                 trajectory_steps.append({"obs": last_obs, "action": action, "inventory": env_state.env_state.items})
 
                 key, key_act = jax.random.split(key)
-                last_obs, env_state, reward, done, info = env.step(key_act, env_state, action)
+                last_obs, env_state, reward, done, info = jit_step(key_act, env_state, action)
                 ep_reward.append(float(reward))
             agent_rewards.append(onp.sum(ep_reward))
             trajectories["agent_" + str(agent)] = trajectory_steps
@@ -860,7 +837,11 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     e_start = 1.0
     e_end = 0.05
 
-    wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
+    logger_run = Run(experiment=self.config["exp_config"]["logger_project"])
+    logger_run['hparams'] = self.config
+    aim_hashes[trial] = self.logger_run.hash
+
+    #wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
 
 
     total_timesteps = {"CartPole-v1": 8e5,
@@ -909,7 +890,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "PROJECT": "sapiens",
         "FIXED_KEY": jax.random.PRNGKey(trial),
         "project_name": project_name,
-        "num_eval_trials": 10,
+        "num_eval_trials": 2,
         "local_mode": local_mode # if True, evaluation data will be saved locally, otherwise under server SCRATCH
     }
     num_updates = config["TOTAL_TIMESTEPS"]/config["NUM_CHECKPOINTS"]
