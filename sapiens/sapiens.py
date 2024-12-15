@@ -761,6 +761,7 @@ def evaluate(train_state, config):
 
         jit_reset = jax.jit(env.reset)
         jit_step = jax.jit(env.step)
+
         network = QNetwork(action_dim=env.action_space(env_params).n)
         agent_rewards = []
         trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
