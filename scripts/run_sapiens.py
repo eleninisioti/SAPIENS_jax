@@ -24,7 +24,7 @@ def parametric(env_name):
                 #for eps_end in eps_end_values:
                 eps_end = 0.05
                 for num_agents in [10]:
-                    for connectivity in [ "dynamic" ]:
+                    for connectivity in [ "fully" , "independent", "dynamic"]:
 
                         main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial, local_mode=True)
 

@@ -64,7 +64,7 @@ class Mergingpaths(Base):
 
         # make second branch
         n_init_items = 3
-        max_steps_in_episode = 8
+        max_steps_in_episode = 6
         recipe = jnp.zeros([max_steps_in_episode, 4]) # first item, second item, result
         key, current_key = jax.random.split(key)
         init_items = jnp.arange(max_steps_in_episode+n_init_items, max_steps_in_episode+n_init_items+n_init_items)
