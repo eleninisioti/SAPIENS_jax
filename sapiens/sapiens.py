@@ -27,6 +27,8 @@ from envs.tiny_alchemy import envs as alchemy_envs
 from jax.experimental import io_callback
 from collections import Counter
 import seaborn as sns
+from aim import Run
+from sapiens.utils import preprocess_dict
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -61,7 +63,7 @@ class CustomTrainState(TrainState):
     visiting: int
 
 
-def make_train(config):
+def make_train(config, logger_run):
 
     config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"]
 
@@ -535,7 +537,7 @@ def make_train(config):
 
 
                     for key, value in metrics.items():
-                        self.logger_run.track(value, name=key)
+                        logger_run.track(value, name=key)
 
                     print("current step " + str(metrics["timesteps"]))
                     print(metrics["returns_max"])
@@ -637,7 +639,7 @@ def init_connectivity(config):
     return config
 
 
-def evaluate(train_state, config):
+def evaluate(train_state, config, logger_run):
     """ Evaluates a trained policy
     """
     if config["local_mode"]:
@@ -826,8 +828,10 @@ def evaluate(train_state, config):
             final_eval_metrics[key + "_mean"].append(onp.mean([el[step] for el in val]))
             final_eval_metrics[key + "_var"].append(onp.var([el[step] for el in val]))
 
-        wandb.log({key: value[-1] for key, value in final_eval_metrics.items()})
+        log_dict = {key: value[-1] for key, value in final_eval_metrics.items()}
 
+        for key, value in log_dict.items():
+            logger_run.track(value, name=key)
     return final_eval_perf, final_eval_metrics
 
 
@@ -835,12 +839,20 @@ def evaluate(train_state, config):
 def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, visit_duration, trial, learning_rate, local_mode=False):
     project_name =  "/sapiens_env" + env_name + "_conn_" + str(connectivity) + "_shared_batch_" + str(shared_batch_size) + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_n_" + str(
         num_agents) + "_trial_" + str(trial) + "_lr_" + str(learning_rate) + "_rew_8"
+
     e_start = 1.0
     e_end = 0.05
 
-    logger_run = Run(experiment=self.config["exp_config"]["logger_project"])
-    logger_run['hparams'] = self.config
-    aim_hashes[trial] = self.logger_run.hash
+    params = {"num_agents": num_agents,
+              "connectivity": connectivity,
+              "shared_batch_size": shared_batch_size,
+              "prob_visit": prob_visit,
+              "visit_duration": visit_duration,
+              "trial": trial,
+              "learning_rate": learning_rate,}
+
+    logger_run = Run(experiment=project_name)
+    logger_run['hparams'] = params
 
     #wandb.login(key="575600e429b7b9e69b36d7f1584e727775d3fcfa")
 
@@ -897,6 +909,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     num_updates = config["TOTAL_TIMESTEPS"]/config["NUM_CHECKPOINTS"]
     config["TOTAL_TIMESTEPS"]= num_updates
     config["NUM_UPDATES"] = num_updates
+    config["aim_hash"] = logger_run.hash
 
 
     if config["local_mode"]:
@@ -919,11 +932,11 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
 
     config["project_dir"] = project_dir
-
     config = init_connectivity(config)
 
     with open(config["project_dir"] + "/config.yaml", "w") as f:
-        yaml.dump(config, f)
+        yaml.dump(preprocess_dict(config), f)
+
 
     if local_mode:
         wandb_mode = "online"
@@ -933,23 +946,11 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         wandb_mode = "offline"
         wandb_dir= "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/wandb"
 
-    print(wandb_mode)
-
-
-    wandb.init(
-        entity=config["ENTITY"],
-        project=config["PROJECT"],
-        tags=["sapiens", config["ENV_NAME"].upper(), f"jax_{jax.__version__}"],
-        name=project_name,
-        config=config,
-        mode=wandb_mode,
-        dir=wandb_dir
-    )
 
 
     rng = jax.random.PRNGKey(config["SEED"])
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
-    train_vjit = jax.jit(jax.vmap(make_train(config)))
+    train_vjit = jax.jit(jax.vmap(make_train(config, logger_run)))
     outs = jax.block_until_ready(train_vjit(rngs))
 
     # find convergence time
@@ -957,7 +958,6 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     first_done = jnp.argmax(found_optimal)
     if first_done:
         convergence_time = first_done
-
     else:
         convergence_time = config["TOTAL_TIMESTEPS"]
     outs["metrics"]["convergence_time"] = convergence_time
@@ -970,7 +970,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     for checkpoint in range(config["NUM_CHECKPOINTS"]):
         train_info = jax.tree_map(lambda x: x[0], outs["keep_train_states"][checkpoint]) # for picking the single train seed
-        eval_perf, eval_metrics = evaluate(train_info, config)
+        eval_perf, eval_metrics = evaluate(train_info, config, logger_run)
 
     #def viz_eval_metrics(eval_metrics):
 
@@ -989,7 +989,6 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     #with open(project_dir + "/policy.pkl", "wb") as f:
     #    pickle.dump(outs["runner_state"][0], f)
-    wandb.finish()
 
 
 
