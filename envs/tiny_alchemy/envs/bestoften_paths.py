@@ -27,8 +27,8 @@ class Bestoftenpaths(Base):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, recipe="single-path"):
-        super().__init__()
+    def __init__(self, key, recipe="single-path"):
+        super().__init__(key)
 
         self.obs_shape = (14,)
 

@@ -23,8 +23,8 @@ def parametric(env_name):
             for eps_start in eps_start_values:
                 #for eps_end in eps_end_values:
                 eps_end = 0.05
-                for num_agents in [10]:
-                    for connectivity in [ "fully" , "independent", "dynamic"]:
+                for num_agents in [20]:
+                    for connectivity in ["independent", "fully", "dynamic" ]:
 
                         main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial, local_mode=True)
 
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     #env_name ="CartPole-v1"
     #env_name = "Freeway-MinAtar"
     #env_name ="MountainCar-v0"
-    env_name = "Merging-paths-alchemy"
-    #env_name = "Bestoften-paths-alchemy"
+    #env_name = "Merging-paths-alchemy"
+    env_name = "Bestoften-paths-alchemy"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[1])
 
     #env_name = "Merging-paths"
