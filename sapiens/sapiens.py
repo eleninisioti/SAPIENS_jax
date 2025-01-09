@@ -28,7 +28,7 @@ from jax.experimental import io_callback
 from collections import Counter
 import seaborn as sns
 from aim import Run
-from utils import preprocess_dict
+from sapiens.utils import preprocess_dict
 class QNetwork(nn.Module):
     action_dim: int
 
