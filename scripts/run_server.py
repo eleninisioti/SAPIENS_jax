@@ -24,7 +24,7 @@ def write_file(env, num_agents,  connectivity, shared_batch_size, prob_visit, vi
         file.write("#SBATCH --time=20:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
         file.write("#SBATCH -A imi@v100" + "\n")
-        file.write("#SBATCH ----cpus-per-task=20"+ "\n")
+        file.write("#SBATCH --cpus-per-task=20"+ "\n")
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
         error_file = name  + "%j.err"
