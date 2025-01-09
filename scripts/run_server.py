@@ -20,16 +20,17 @@ def write_file(env, num_agents,  connectivity, shared_batch_size, prob_visit, vi
         file.write("#!/bin/bash"+ "\n")
         job_name = name
         file.write("#SBATCH --job-name=" + job_name + "\n")
-        file.write("#SBATCH -A imi@cpu" + "\n")
+        file.write("#SBATCH -A imi@v100" + "\n")
         file.write("#SBATCH --time=20:00:00"+ "\n")
         file.write("#SBATCH --hint=nomultithread"+ "\n")
+        file.write("#SBATCH -A imi@v100" + "\n")
+        file.write("#SBATCH ----cpus-per-task=20"+ "\n")
         output_file = name  + "%j.out"
         file.write("#SBATCH --output=" + top_dir + "jz_logs" + output_file + "\n")
         error_file = name  + "%j.err"
         file.write("#SBATCH --error=" + top_dir + "jz_logs" + error_file+ "\n")
         file.write("source ~/.bashrc"+ "\n")
-        file.write("module load pytorch-gpu/py3/1.11.0 "+ "\n")
-        file.write("conda activate sapiens "+ "\n")
+        file.write("module load python-3.11.5 "+ "\n")
 
         file.write("")
         command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size)
@@ -104,11 +105,11 @@ def parametric(env_name):
             for num_agents in [20]:
                 for connectivity in ["independent", "fully", "dynamic" ]:
 
-                    write_file(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial)
+                    write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial)
 
 
 if __name__ == "__main__":
-    #env_name ="Single-path-alchemy"
-    env_name ="Merging-paths-alchemy"
+    env_name ="Single-path-alchemy"
+    #env_name ="Merging-paths-alchemy"
 
     parametric(env_name)
