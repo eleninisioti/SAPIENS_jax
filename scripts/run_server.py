@@ -3,11 +3,11 @@ sys.path.append(os.getcwd())
 from datetime import datetime
 import os
 
-def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, prob_visit, visit_duration, trial):
+def write_file(env, num_agents,  connectivity, shared_batch_size, prob_visit, visit_duration, trial):
     top_dir = "/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/"
     current_date = datetime.today().strftime('%Y_%m_%d')
     name = ("/env_" + env + "_numagents_" + str(num_agents) + "_conn_" + connectivity + "_shared_batch_" + str(shared_batch_size)
-            + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration) + "_lr_" + str(learning_rate) + "_trial_" + str(trial))
+            + "_prob_visit_" + str(prob_visit) + "_visit_dur_" + str(visit_duration)  + "_trial_" + str(trial))
 
     file_name = (top_dir + "jz_scripts/" + current_date + name + ".slurm")
 
@@ -32,7 +32,7 @@ def write_file(env, num_agents, learning_rate, connectivity, shared_batch_size, 
         file.write("conda activate sapiens "+ "\n")
 
         file.write("")
-        command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size) + " --learning_rate " + str(learning_rate)
+        command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size)
         file.write(command+ "\n")
 
 
@@ -89,6 +89,22 @@ def parametric(env_name):
 #write_file(env_name, num_agents=1,  shared_batch_size=1, prob_visit=0.2,
     #     visit_duration=10, connectivity="fully", trial=0)
 
+
+def parametric(env_name):
+
+    lr_values = [1e-4]
+    lr = lr_values[0]
+    eps_start_values = [ 1]
+    visit_duration_values =[360]
+
+    for trial in range(10):
+
+        for visit_duration in visit_duration_values:
+
+            for num_agents in [20]:
+                for connectivity in ["independent", "fully", "dynamic" ]:
+
+                    write_file(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial)
 
 
 if __name__ == "__main__":
