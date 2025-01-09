@@ -53,8 +53,8 @@ if __name__ == "__main__":
     #env_name ="CartPole-v1"
     #env_name = "Freeway-MinAtar"
     #env_name ="MountainCar-v0"
-    #env_name = "Merging-paths-alchemy"
-    env_name = "Bestoften-paths-alchemy"
+    env_name = "Merging-paths-alchemy"
+    #env_name = "Bestoften-paths-alchemy"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[1])
 
     #env_name = "Merging-paths"
