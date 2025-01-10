@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Specify the directory containing the batch job files
-job_dir="/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/jz_scripts/2025_01_11"
+job_dir="/lustre/fsn1/projects/rech/imi/utw61ti/sapiens_log/jz_scripts/2025_01_10"
 
 # Check if the directory exists
 if [ ! -d "$job_dir" ]; then
