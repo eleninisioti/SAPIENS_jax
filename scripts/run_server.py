@@ -33,7 +33,7 @@ def write_file(env, num_agents,  connectivity, shared_batch_size, prob_visit, vi
         file.write("module load python/3.11.5 "+ "\n")
 
         file.write("")
-        command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity + "  --connectivity " + connectivity + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size)
+        command = "python sapiens/sapiens.py --env " + env + " --n_agents " + str(num_agents) + "  --connectivity " + connectivity  + " --trial " + str(trial) +  " --visit_duration " + str(visit_duration) + " --prob_visit " + str(prob_visit) + " --shared_batch_size " + str(shared_batch_size)
         file.write(command+ "\n")
 
 

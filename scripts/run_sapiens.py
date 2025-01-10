@@ -12,6 +12,7 @@ def parametric(env_name):
 
     lr_values = [1e-4]
     lr = lr_values[0]
+    #lr = 0.2
     eps_start_values = [ 1]
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 320]
@@ -53,9 +54,10 @@ if __name__ == "__main__":
     #env_name ="CartPole-v1"
     #env_name = "Freeway-MinAtar"
     #env_name ="MountainCar-v0"
-    env_name = "Merging-paths-alchemy"
+    #env_name = "Merging-paths-alchemy"
     #env_name = "Bestoften-paths-alchemy"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[1])
+    env_name = "Single-path-alchemy"
 
     #env_name = "Merging-paths"
     parametric(env_name)

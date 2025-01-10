@@ -542,6 +542,7 @@ def make_train(config, logger_run):
                     print("current step " + str(metrics["timesteps"]))
                     print(metrics["returns_max"])
 
+                    """
                     save_dir = config["project_dir"] + "/neighbors"
                     if not os.path.exists(save_dir):
                         os.makedirs(save_dir)
@@ -553,6 +554,7 @@ def make_train(config, logger_run):
                         os.makedirs(save_dir)
                     with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
                         pickle.dump(visiting, f)
+                    """
 
 
                     #wandb.log({"neighbors": wandb.Image(})
@@ -867,6 +869,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
 
     buffer_size = 25_000
+    #buffer_size = 5_000
     if connectivity == "fully":
         buffer_scale = num_agents
     else:
@@ -1004,7 +1007,7 @@ if __name__ == "__main__":
     parser.add_argument("--visit_duration", type=int, help="Duration of visit in dynamic networks",default=10)
     parser.add_argument("--connectivity", type=str, help="Connectivity",default="fully")
     parser.add_argument("--local_mode", action='store_true')
-    parser.add_argument("--learning_rate", type=float, help="Probability of visit in dynamic networks",default=0.2)
+    parser.add_argument("--learning_rate", type=float, help="Probability of visit in dynamic networks",default=1e-4)
 
     args = parser.parse_args()
 
