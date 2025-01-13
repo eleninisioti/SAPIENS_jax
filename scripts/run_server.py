@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parametric(env_name, connectivities = ["fully"])
 
 
-    #env_name = "Bestoften-paths-alchemy"
+    env_name = "Bestoften-paths-alchemy"
 
     parametric(env_name, connectivities = ["fully", "dynamic", "independent"])
 
