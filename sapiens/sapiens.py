@@ -874,7 +874,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         buffer_scale = num_agents
     else:
         buffer_scale = 1 # maybe here I want to scale dynamic by 2?
-
+    buffer_scale = 1
     config = {
         "NUM_AGENTS": num_agents,
         "BUFFER_SIZE": buffer_size*buffer_scale,

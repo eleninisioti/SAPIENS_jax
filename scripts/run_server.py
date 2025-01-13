@@ -91,7 +91,7 @@ def parametric(env_name):
     #     visit_duration=10, connectivity="fully", trial=0)
 
 
-def parametric(env_name):
+def parametric(env_name, connectivitiies):
 
     lr_values = [1e-4]
     lr = lr_values[0]
@@ -103,14 +103,23 @@ def parametric(env_name):
         for visit_duration in visit_duration_values:
 
             for num_agents in [20]:
-                for connectivity in ["independent", "fully", "dynamic" ]:
+                for connectivity in connectivities:
 
                     write_file(env_name, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial)
 
 
 if __name__ == "__main__":
+    env_name ="Merging-paths-alchemy"
+    parametric(env_name, connectivities = ["fully"])
+
     env_name ="Single-path-alchemy"
 
-    parametric(env_name)
-    env_name ="Merging-paths-alchemy"
-    parametric(env_name)
+    parametric(env_name, connectivities = ["fully"])
+
+
+    #env_name = "Bestoften-paths-alchemy"
+
+    parametric(env_name, connectivities = ["fully", "dynamic", "independent"])
+
+
+
