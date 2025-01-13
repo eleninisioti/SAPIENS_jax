@@ -91,7 +91,7 @@ def parametric(env_name):
     #     visit_duration=10, connectivity="fully", trial=0)
 
 
-def parametric(env_name, connectivitiies):
+def parametric(env_name, connectivities):
 
     lr_values = [1e-4]
     lr = lr_values[0]
