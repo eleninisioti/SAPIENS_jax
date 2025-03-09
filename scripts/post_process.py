@@ -314,4 +314,4 @@ if __name__ == "__main__":
 
    process_all_projects()
 
-   #all_leaderboard()
+   all_leaderboard()
