@@ -60,4 +60,8 @@ if __name__ == "__main__":
 
     #env_name = "Merging-paths"
     #parametric(env_name)
-    parametric(sys.argv[2])
+    tasks = ["Single-path-alchemy",
+             "Merging-paths-alchemy",
+             "Bestoften-paths-alchemy" ]
+
+    parametric(tasks[sys.argv[2]])
