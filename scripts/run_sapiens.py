@@ -40,8 +40,7 @@ def alchemy():
     main(env_name, num_agents, shared_batch_size=1, prob_visit=0.2, visit_duration=10, connectivity="fully",trial=0, local_mode=True)
 
 
-def independent():
-    env_name ="Single-path-alchemy"
+def independent(env_name):
     #env_name ="MountainCar-v0"
     #env_name = "Freeway-MinAtar"
 
@@ -54,11 +53,11 @@ if __name__ == "__main__":
     #env_name ="CartPole-v1"
     #env_name = "Freeway-MinAtar"
     #env_name ="MountainCar-v0"
-    #env_name = "Merging-paths-alchemy"
+    env_name = "Merging-paths-alchemy"
     #env_name = "Bestoften-paths-alchemy"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[1])
-    env_name = "Single-path-alchemy"
+    #env_name = "Single-path-alchemy"
 
     #env_name = "Merging-paths"
-    parametric(env_name)
-    #independent()
+    #parametric(env_name)
+    independent()

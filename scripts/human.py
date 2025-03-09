@@ -52,7 +52,7 @@ def play_episode(game, episode_idx):
     # initialize environment
     env_name = game
     episode_length = 1000
-    env = envs.get_environment(env_name)
+    env = envs.get_environment(env_name, key=jax.random.PRNGKey(0))
 
     states = []
     jit_reset =jax.jit(env.reset)
@@ -123,4 +123,4 @@ if __name__ == "__main__":
     print("You are the discrete fish robot. \n"
           "You have only four actions: moving left ('a'), moving right ('d'), moving forward ('w') and moving backward ('s').")
 
-    play_game(n_episodes=1, game="Merging-paths-alchemy")
+    play_game(n_episodes=1, game="Bestoften-paths-alchemy")

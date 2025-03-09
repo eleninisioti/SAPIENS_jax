@@ -28,7 +28,7 @@ from jax.experimental import io_callback
 from collections import Counter
 import seaborn as sns
 from aim import Run
-from utils import preprocess_dict
+from sapiens.utils import preprocess_dict
 class QNetwork(nn.Module):
     action_dim: int
 
@@ -870,10 +870,10 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     buffer_size = 25_000
     #buffer_size = 5_000
-    if connectivity == "fully":
-        buffer_scale = num_agents
-    else:
-        buffer_scale = 1 # maybe here I want to scale dynamic by 2?
+    #if connectivity == "fully":
+    #    buffer_scale = num_agents
+    #else:
+    #   buffer_scale = 1 # maybe here I want to scale dynamic by 2?
     buffer_scale = 1
     config = {
         "NUM_AGENTS": num_agents,
