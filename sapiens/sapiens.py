@@ -800,10 +800,6 @@ def evaluate(train_state, config, logger_run):
             agent_rewards.append(onp.sum(ep_reward))
             trajectories["agent_" + str(agent)].append( trajectory_steps)
 
-
-        with open(save_dir + "/traj_" + str(trial) +  ".pkl", "wb") as f:
-            pickle.dump([env, env_params, state_seq, ep_reward], f)
-
             #if config["local_mode"]:
             #    vis = Visualizer(env, env_params, state_seq, ep_reward)
             #    vis.animate(save_dir + "/anim.gif")
@@ -811,9 +807,12 @@ def evaluate(train_state, config, logger_run):
         eval_perf["mean_rewards"].append(onp.mean(agent_rewards))
         eval_perf["max_rewards"].append(onp.max(agent_rewards))
 
-        traj_metrics = get_trajectory_metrics(trajectories, env_state.env_state.recipe_book, basic_env.episode_length)
-        for key, val in traj_metrics.items():
-            eval_metrics[key].append(val)
+       #traj_metrics = get_trajectory_metrics(trajectories, env_state.env_state.recipe_book, basic_env.episode_length)
+        #for key, val in traj_metrics.items():
+        #    eval_metrics[key].append(val)
+
+    with open(save_dir + "/trajectories.pkl", "wb") as f:
+        pickle.dump([trajectories], f)
 
     final_eval_perf = {}
     for key, val in eval_perf.items():
