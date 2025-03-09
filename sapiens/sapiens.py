@@ -641,7 +641,7 @@ def init_connectivity(config):
     return config
 
 
-def evaluate(train_state, config, logger_run):
+def evaluate(train_state, config, logger_run, checkpoint):
     """ Evaluates a trained policy
     """
     if config["local_mode"]:
@@ -662,91 +662,6 @@ def evaluate(train_state, config, logger_run):
 
 
 
-
-    def get_trajectory_metrics(trajectories, recipe_book, num_steps):
-
-        paths = list(set(recipe_book[...,4].tolist()))
-        num_paths = len(paths)
-        num_agents = len(trajectories)
-        # get action conformism
-
-        traj_metrics = {"action_conformism": [],
-                        "path_conformism": [],
-                        "volatility": []}
-
-        agent_paths = {path: 0 for path in paths}
-        agent_paths[-999] = 0
-        for step in range(num_steps):
-            actions = []
-            for agent, traj in trajectories.items():
-                actions.append(float(traj[step]["action"]))
-
-            # Count occurrences of each element
-            counts = Counter(actions)
-            # Find the element with the maximum count
-            majority = max(counts, key=counts.get)
-            traj_metrics["action_conformism"].append(onp.sum([1 if el==majority else 0 for el in actions ])/config["NUM_AGENTS"])
-
-            # path_conformism
-            #paths = {el: 0 for el in range(num_paths)} # which paths is the agent exploring
-            for agent, traj in trajectories.items():
-                inventory = traj[step]["inventory"]
-                current_paths = []
-                for el, exists in enumerate(inventory):
-                    if exists:
-                        for recipe_item in recipe_book:
-                            if recipe_item[2] == el:
-                                paths[int(recipe_item[4])] += 1
-                                current_paths.append(recipe_item[4])
-
-                                agent_paths[int(recipe_item[4])] += 1
-
-                if not current_paths:
-                    agent_paths[-999] += 1
-
-            majority_path = max(agent_paths, key=agent_paths.get)
-            if majority_path ==-999:
-                traj_metrics["path_conformism"].append(1)
-            else:
-                traj_metrics["path_conformism"].append(agent_paths[majority_path]/num_agents)
-
-
-
-        # volatility
-        volatilities = []
-        for agent, traj in trajectories.items():
-            changes = 0
-            volatility = [0]
-
-            agent_paths = []
-
-            for step in range(num_steps):
-                inventory = traj[step]["inventory"]
-                current_paths = []
-                for el, exists in enumerate(inventory):
-                    if exists:
-                        for recipe_item in recipe_book:
-                            if recipe_item[2] == el:
-                                paths[int(recipe_item[4])] += 1
-                                current_paths.append(int(recipe_item[4]))
-
-                    if not current_paths:
-                        current_paths= [-999]
-
-                agent_paths.append(current_paths)
-
-            for step in range(1, num_steps):
-
-                if agent_paths[step] != agent_paths[step-1]:
-                    changes += 1
-                volatility.append(changes)
-
-            #volatility.append(changes)
-            volatilities.append(volatility)
-
-        traj_metrics["volatility"] = onp.mean(onp.array(volatilities),axis=0).tolist()
-
-        return traj_metrics
 
 
     trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
@@ -811,7 +726,7 @@ def evaluate(train_state, config, logger_run):
         #for key, val in traj_metrics.items():
         #    eval_metrics[key].append(val)
 
-    with open(save_dir + "/trajectories.pkl", "wb") as f:
+    with open(save_dir + "/trajectories" + str(checkpoint) + ".pkl", "wb") as f:
         pickle.dump([trajectories], f)
 
     final_eval_perf = {}
@@ -857,7 +772,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 1e6,
+                       "Single-path-alchemy": 1e2,
                        "Merging-paths-alchemy": 2e6,
                        "Bestoften-paths-alchemy": 8e7
                        }
@@ -968,7 +883,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
 
     for checkpoint in range(config["NUM_CHECKPOINTS"]):
         train_info = jax.tree_map(lambda x: x[0], outs["keep_train_states"][checkpoint]) # for picking the single train seed
-        eval_perf, eval_metrics = evaluate(train_info, config, logger_run)
+        eval_perf, eval_metrics = evaluate(train_info, config, logger_run, checkpoint)
 
     #def viz_eval_metrics(eval_metrics):
 
