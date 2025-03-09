@@ -64,4 +64,4 @@ if __name__ == "__main__":
              "Merging-paths-alchemy",
              "Bestoften-paths-alchemy" ]
 
-    parametric(tasks[sys.argv[2]])
+    parametric(tasks[int(sys.argv[2])])
