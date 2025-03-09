@@ -40,12 +40,12 @@ def alchemy():
     main(env_name, num_agents, shared_batch_size=1, prob_visit=0.2, visit_duration=10, connectivity="fully",trial=0, local_mode=True)
 
 
-def independent(env_name):
+def train(env_name):
     #env_name ="MountainCar-v0"
     #env_name = "Freeway-MinAtar"
 
-    num_agents = 20
-    main(env_name, num_agents=20, shared_batch_size=0, prob_visit=0.2, visit_duration=10, connectivity="independent",trial=0, local_mode=True)
+    
+    main(env_name, learning_rate=1e-4, num_agents=10, shared_batch_size=0, prob_visit=0.2, visit_duration=10, connectivity="fully",trial=0, local_mode=True)
 
 
 if __name__ == "__main__":
@@ -60,4 +60,4 @@ if __name__ == "__main__":
 
     #env_name = "Merging-paths"
     #parametric(env_name)
-    independent()
+    train(env_name)
