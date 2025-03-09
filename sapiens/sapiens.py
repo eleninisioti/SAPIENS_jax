@@ -749,7 +749,10 @@ def evaluate(train_state, config, logger_run):
         return traj_metrics
 
 
-
+    trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
+    save_dir = config["project_dir"] + "/eval_data/"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     for trial in range(config["num_eval_trials"]):
 
         key = jax.random.PRNGKey(trial)
@@ -768,12 +771,7 @@ def evaluate(train_state, config, logger_run):
 
         network = QNetwork(action_dim=env.action_space(env_params).n)
         agent_rewards = []
-        trajectories = {"agent_" + str(el): [] for el in range(config["NUM_AGENTS"])}
         for agent in range(config["NUM_AGENTS"]):
-
-            save_dir = top_dir + config["project_name"] + "/visuals/trial_" + str(trial) + "/agent_" + str(agent)
-            if not os.path.exists(save_dir):
-                os.makedirs(save_dir)
 
             key, agent_key = jax.random.split(key)
 
@@ -800,13 +798,11 @@ def evaluate(train_state, config, logger_run):
                 last_obs, env_state, reward, done, info = jit_step(key_act, env_state, action)
                 ep_reward.append(float(reward))
             agent_rewards.append(onp.sum(ep_reward))
-            trajectories["agent_" + str(agent)] = trajectory_steps
+            trajectories["agent_" + str(agent)].append( trajectory_steps)
 
-            with open(save_dir + "/rewards_" + str(trial) +  ".txt", "a") as f:
-                f.write(str(ep_reward) + ",\n")
 
-            with open(save_dir + "/traj_" + str(trial) +  ".pkl", "wb") as f:
-                pickle.dump([env, env_params, state_seq, ep_reward], f)
+        with open(save_dir + "/traj_" + str(trial) +  ".pkl", "wb") as f:
+            pickle.dump([env, env_params, state_seq, ep_reward], f)
 
             #if config["local_mode"]:
             #    vis = Visualizer(env, env_params, state_seq, ep_reward)

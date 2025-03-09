@@ -39,6 +39,91 @@ custom_palette = {
 }
 
 
+def get_trajectory_metrics(trajectories, recipe_book, num_steps):
+    paths = list(set(recipe_book[..., 4].tolist()))
+    num_paths = len(paths)
+    num_agents = len(trajectories)
+    # get action conformism
+
+    traj_metrics = {"action_conformism": [],
+                    "path_conformism": [],
+                    "volatility": []}
+
+    agent_paths = {path: 0 for path in paths}
+    agent_paths[-999] = 0
+    for step in range(num_steps):
+        actions = []
+        for agent, traj in trajectories.items():
+            actions.append(float(traj[step]["action"]))
+
+        # Count occurrences of each element
+        counts = Counter(actions)
+        # Find the element with the maximum count
+        majority = max(counts, key=counts.get)
+        traj_metrics["action_conformism"].append(
+            onp.sum([1 if el == majority else 0 for el in actions]) / config["NUM_AGENTS"])
+
+        # path_conformism
+        # paths = {el: 0 for el in range(num_paths)} # which paths is the agent exploring
+        for agent, traj in trajectories.items():
+            inventory = traj[step]["inventory"]
+            current_paths = []
+            for el, exists in enumerate(inventory):
+                if exists:
+                    for recipe_item in recipe_book:
+                        if recipe_item[2] == el:
+                            paths[int(recipe_item[4])] += 1
+                            current_paths.append(recipe_item[4])
+
+                            agent_paths[int(recipe_item[4])] += 1
+
+            if not current_paths:
+                agent_paths[-999] += 1
+
+        majority_path = max(agent_paths, key=agent_paths.get)
+        if majority_path == -999:
+            traj_metrics["path_conformism"].append(1)
+        else:
+            traj_metrics["path_conformism"].append(agent_paths[majority_path] / num_agents)
+
+    # volatility
+    volatilities = []
+    for agent, traj in trajectories.items():
+        changes = 0
+        volatility = [0]
+
+        agent_paths = []
+
+        for step in range(num_steps):
+            inventory = traj[step]["inventory"]
+            current_paths = []
+            for el, exists in enumerate(inventory):
+                if exists:
+                    for recipe_item in recipe_book:
+                        if recipe_item[2] == el:
+                            paths[int(recipe_item[4])] += 1
+                            current_paths.append(int(recipe_item[4]))
+
+                if not current_paths:
+                    current_paths = [-999]
+
+            agent_paths.append(current_paths)
+
+        for step in range(1, num_steps):
+
+            if agent_paths[step] != agent_paths[step - 1]:
+                changes += 1
+            volatility.append(changes)
+
+        # volatility.append(changes)
+        volatilities.append(volatility)
+
+    traj_metrics["volatility"] = onp.mean(onp.array(volatilities), axis=0).tolist()
+
+    return traj_metrics
+
+
+
 def make_barplot(df, save_file, metric_name):
     method_order = ["PPO", "NEAT", "HyperNEAT"]
 
