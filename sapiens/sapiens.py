@@ -58,6 +58,7 @@ class CustomTrainState(TrainState):
     n_updates: int
     buffer_diversity: float
     buffer_diversity_proper: float
+    group_buffer_diversity: float
     neighbors: jnp.array
     keep_neighbors: jnp.array
     visiting: int
@@ -147,6 +148,7 @@ def make_train(config, logger_run):
                 n_updates=0,
                 buffer_diversity=0.0,
                 buffer_diversity_proper=0.0,
+                group_buffer_diversity=0.0,
                 neighbors=neighbors,
             )
             return train_state, env_state, init_obs, buffer_state
@@ -279,6 +281,15 @@ def make_train(config, logger_run):
                 return train_state
 
 
+            def _compute_group_diversity(train_state):
+                new_arr = buffer_obs.reshape(-1, *buffer_obs.shape[2:])
+
+                diversity =get_diversity(new_arr)
+
+                train_state = train_state.replace(group_buffer_diversity=jnp.repeat(diversity, config["NUM_AGENTS"]))
+                return train_state
+
+
             def _is_diversity_time(buffer_state, train_state):
                 value = (
                         (buffer.can_sample(buffer_state))
@@ -309,6 +320,15 @@ def make_train(config, logger_run):
                 train_state,
                 _rng_group,
             )
+
+            train_state = jax.lax.cond(
+                is_diversity_time,
+                lambda train_state, rng: _compute_group_diversity(train_state),
+                lambda train_state, rng: train_state,  # do nothing
+                train_state,
+                _rng_group,
+            )
+
 
 
 
@@ -524,6 +544,7 @@ def make_train(config, logger_run):
                 "returns_max": info["returned_episode_returns"].max(),
                 "diversity_mean": train_state.buffer_diversity.mean(),
                 "diversity_max": train_state.buffer_diversity.max(),
+                "group_diversity_mean": train_state.group_buffer_diversity,
                 "diversity_proper_mean": train_state.buffer_diversity_proper.mean(),
                 "diversity_proper_max": train_state.buffer_diversity_proper.max(),
 

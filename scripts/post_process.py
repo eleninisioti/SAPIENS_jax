@@ -8,6 +8,12 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pickle
+from envs.tiny_alchemy import envs as alchemy_envs
+import gymnax
+import jax
+from collections import Counter
+import numpy as onp
+
 
 task_successes = {"Single-path-alchemy": 36.0,
                   "Merging-paths-alchemy": 50.0,
@@ -39,86 +45,65 @@ custom_palette = {
 }
 
 
-def get_trajectory_metrics(trajectories, recipe_book, num_steps):
+def trajectory_metrics(config):
+    if "alchemy" in config["ENV_NAME"]:
+        # we create the group
+        basic_env = alchemy_envs.get_environment(config["ENV_NAME"], key=config["FIXED_KEY"])
+        env_params = basic_env.default_params
+    else:
+        basic_env, env_params = gymnax.make(config["ENV_NAME"])
+    env = FlattenObservationWrapper(basic_env)
+    env = LogWrapper(env)
+    jit_reset = jax.jit(env.reset)
+    jit_step = jax.jit(env.step)
+
+    last_obs, env_state = jit_reset(config["FIXED_KEY"])
+    recipe_book = env_state.env_state.recipe_book
+
     paths = list(set(recipe_book[..., 4].tolist()))
     num_paths = len(paths)
-    num_agents = len(trajectories)
+    episode_length = basic_env.episode_length
+
+    num_agents = config["NUM_AGENTS"]
+
     # get action conformism
 
     traj_metrics = {"action_conformism": [],
                     "path_conformism": [],
                     "volatility": []}
 
-    agent_paths = {path: 0 for path in paths}
-    agent_paths[-999] = 0
-    for step in range(num_steps):
-        actions = []
-        for agent, traj in trajectories.items():
-            actions.append(float(traj[step]["action"]))
+    for checkpoint in range(config(["NUM_CHECKPOINTS"])):
+        with open(config["PROJECT_DIR"] + "/eval_data/trajectories_" + str(checkpoint) + ".pkl", "rb") as f:
+            checkpoint_trajs = pickle.load(f)
 
-        # Count occurrences of each element
-        counts = Counter(actions)
-        # Find the element with the maximum count
-        majority = max(counts, key=counts.get)
-        traj_metrics["action_conformism"].append(
-            onp.sum([1 if el == majority else 0 for el in actions]) / config["NUM_AGENTS"])
+        for eval_trial in range(len(checkpoint_trajs)):
+            trial_trajs = checkpoint_trajs[eval_trial]
+            action_conformism = []
+            for step in range(episode_length):
+                all_actions = []
+                for agent in range(config["NUM_AGENTS"]):
+                    all_actions.append(trial_trajs["agent_" + str(agent)][step]["action"])
 
-        # path_conformism
-        # paths = {el: 0 for el in range(num_paths)} # which paths is the agent exploring
-        for agent, traj in trajectories.items():
-            inventory = traj[step]["inventory"]
-            current_paths = []
-            for el, exists in enumerate(inventory):
-                if exists:
-                    for recipe_item in recipe_book:
-                        if recipe_item[2] == el:
-                            paths[int(recipe_item[4])] += 1
-                            current_paths.append(recipe_item[4])
+                    """
 
-                            agent_paths[int(recipe_item[4])] += 1
+                    inventory = trial_trajs["agent_" + str(agent)][step]["action"]
+                    for el, exists in enumerate(inventory):
+                        if exists:
+                            for recipe_item in recipe_book:
+                                if recipe_item[2] == el:
+                                    paths[int(recipe_item[4])] += 1
+                                    current_paths.append(recipe_item[4])
+                                    agent_paths[int(recipe_item[4])] += 1
+                    """
 
-            if not current_paths:
-                agent_paths[-999] += 1
+                counts = Counter(all_actions)
+                # Find the element with the maximum count
+                majority = max(counts, key=counts.get)
+                action_conformism.append( onp.sum([1 if el == majority else 0 for el in all_actions]) / config["NUM_AGENTS"])
 
-        majority_path = max(agent_paths, key=agent_paths.get)
-        if majority_path == -999:
-            traj_metrics["path_conformism"].append(1)
-        else:
-            traj_metrics["path_conformism"].append(agent_paths[majority_path] / num_agents)
 
-    # volatility
-    volatilities = []
-    for agent, traj in trajectories.items():
-        changes = 0
-        volatility = [0]
+            traj_metrics["action_conformism"].append(onp.mean(action_conformism))
 
-        agent_paths = []
-
-        for step in range(num_steps):
-            inventory = traj[step]["inventory"]
-            current_paths = []
-            for el, exists in enumerate(inventory):
-                if exists:
-                    for recipe_item in recipe_book:
-                        if recipe_item[2] == el:
-                            paths[int(recipe_item[4])] += 1
-                            current_paths.append(int(recipe_item[4]))
-
-                if not current_paths:
-                    current_paths = [-999]
-
-            agent_paths.append(current_paths)
-
-        for step in range(1, num_steps):
-
-            if agent_paths[step] != agent_paths[step - 1]:
-                changes += 1
-            volatility.append(changes)
-
-        # volatility.append(changes)
-        volatilities.append(volatility)
-
-    traj_metrics["volatility"] = onp.mean(onp.array(volatilities), axis=0).tolist()
 
     return traj_metrics
 
@@ -173,7 +158,6 @@ def leaderboard(top_dir):
             with open(project_dir + "/trial_0/config.yaml", "r") as f:
                 config = yaml.load(f, Loader=yaml.SafeLoader)
 
-
             method_name = METHOD_ALIASES[project]
 
             mean = eval_info["mean_" + metric]
@@ -219,6 +203,10 @@ def leaderboard(top_dir):
         plt.legend()
         plt.savefig(top_dir + "/visuals/" + metric_name + ".png")
         plt.clf()
+
+
+
+    # then plot behavioral metrics
 
 
 
@@ -283,9 +271,12 @@ def process_project(config):
 
     # save metrics with time
 
-    return all_metrics, run_summary
 
-def viz_metrics(project_dir, metrics):
+    all_beh_metrics = traj_metrics(config)
+
+    return all_metrics, all_beh_metrics, run_summary
+
+def viz_metrics(project_dir, metrics, beh_metrics):
     df = pd.DataFrame(metrics)
 
     if not os.path.exists(project_dir + "/visuals/"):
@@ -307,8 +298,26 @@ def viz_metrics(project_dir, metrics):
         #plt.ylabel('Reward')
         plt.legend()
 
+        plt.savefig(project_dir + "/visuals/" + metric + ".png")
 
+    df = pd.DataFrame(beh_metrics)
 
+    if not os.path.exists(project_dir + "/visuals/"):
+        os.makedirs(project_dir + "/visuals/")
+
+    for metric in [el for el in df.columns if el != "timesteps"]:
+        grouped = df.groupby('timesteps')[metric]
+        df_sorted = df.sort_values(by='timesteps')
+
+        # Plot using seaborn lineplot, with error bars indicating the standard deviation
+        plt.figure(figsize=(8, 6))
+        sns.lineplot(data=df_sorted, x='timesteps', y=metric, ci='sd', label='Mean Reward')
+
+        # Customize plot
+        # plt.title('Reward vs. Num Steps with Variance')
+        plt.xlabel('Number of Steps')
+        # plt.ylabel('Reward')
+        plt.legend()
 
         plt.savefig(project_dir + "/visuals/" + metric + ".png")
 
@@ -330,24 +339,26 @@ def process_projects(task, connectivity):
     total_eval_summary = defaultdict(list)
 
     total_metrics = defaultdict(list)
+    total_beh_metrics = defaultdict(list)
     for trial in range(num_trials):
         trial_dir = os.path.join(project_dir, "trial_" + str(trial))
 
         with open(trial_dir + "/config.yaml", "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        metric_values, run_summary = process_project(config)
+        metric_values, beh_metric_values, run_summary = process_project(config)
         for key, values in run_summary.items():
             total_eval_summary[key].append(values)
-
 
         for key, values in metric_values.items():
             total_metrics[key].extend(values)
 
+        for key, values in beh_metric_values.items():
+            total_beh_metrics[key].extend(values)
+
 
     mean_stats = {}
     for key, val in total_eval_summary.items():
-
         val = [el  for el in val if el is not None ]
 
         if len(val):
@@ -372,7 +383,7 @@ def process_projects(task, connectivity):
         pickle.dump(total_metrics, f)
 
 
-    viz_metrics(save_dir, total_metrics)
+    viz_metrics(save_dir, total_metrics, total_beh_metrics)
 
 
 
