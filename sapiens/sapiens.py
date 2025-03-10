@@ -544,7 +544,7 @@ def make_train(config, logger_run):
                 "returns_max": info["returned_episode_returns"].max(),
                 "diversity_mean": train_state.buffer_diversity.mean(),
                 "diversity_max": train_state.buffer_diversity.max(),
-                "group_diversity_mean": train_state.group_buffer_diversity,
+                "group_diversity_mean": train_state.group_buffer_diversity.mean(),
                 "diversity_proper_mean": train_state.buffer_diversity_proper.mean(),
                 "diversity_proper_max": train_state.buffer_diversity_proper.max(),
 
