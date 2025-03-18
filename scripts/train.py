@@ -31,6 +31,29 @@ def parametric(env_name):
 
 
 
+def fully(env_name):
+
+    lr_values = [1e-4]
+    lr = lr_values[0]
+    #lr = 0.2
+    eps_start_values = [ 1]
+    eps_end_values = [0.05]
+    visit_duration_values = [10, 80, 160, 320]
+    visit_duration_values =[360]
+
+    for trial in range(10):
+
+        for visit_duration in visit_duration_values:
+            for eps_start in eps_start_values:
+                #for eps_end in eps_end_values:
+                eps_end = 0.05
+                for num_agents in [10]:
+                    for connectivity in ["fully" ]:
+
+                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial, local_mode=True)
+
+
+
 def alchemy():
     env_name ="Single-path-alchemy"
     #env_name ="MountainCar-v0"
@@ -64,4 +87,4 @@ if __name__ == "__main__":
              "Merging-paths-alchemy",
              "Bestoften-paths-alchemy" ]
 
-    parametric(tasks[int(sys.argv[2])])
+    fully(tasks[int(sys.argv[2])])

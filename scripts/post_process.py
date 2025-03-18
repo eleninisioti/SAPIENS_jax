@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+import envs
 import numpy as np
 import yaml
 import os
@@ -41,69 +44,63 @@ custom_colors = ["#f94144",
 custom_palette = {
     "no-sharing": custom_colors[0],        # Soft Orange
     "dynamic": custom_colors[5],       # Light Green
-    "fully": custom_colors[-1]   # Peach
+    "fully-connected": custom_colors[-1]   # Peach
 }
 
 
-def trajectory_metrics(config):
-    if "alchemy" in config["ENV_NAME"]:
-        # we create the group
-        basic_env = alchemy_envs.get_environment(config["ENV_NAME"], key=config["FIXED_KEY"])
-        env_params = basic_env.default_params
-    else:
-        basic_env, env_params = gymnax.make(config["ENV_NAME"])
-    env = FlattenObservationWrapper(basic_env)
-    env = LogWrapper(env)
-    jit_reset = jax.jit(env.reset)
-    jit_step = jax.jit(env.step)
+def get_trajectory_metrics(config, trial_dir):
+    
+    
+    env = alchemy_envs.get_environment(config["ENV_NAME"], key=config["FIXED_KEY"])
+    episode_length = env.episode_length
 
-    last_obs, env_state = jit_reset(config["FIXED_KEY"])
-    recipe_book = env_state.env_state.recipe_book
-
-    paths = list(set(recipe_book[..., 4].tolist()))
-    num_paths = len(paths)
-    episode_length = basic_env.episode_length
-
-    num_agents = config["NUM_AGENTS"]
 
     # get action conformism
 
-    traj_metrics = {"action_conformism": [],
-                    "path_conformism": [],
-                    "volatility": []}
+    traj_metrics = {"action_conformism": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
+                    "path_conformism": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
+                    "volatility": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
+                    "timesteps": [checkpoint for checkpoint in range(config["NUM_CHECKPOINTS"])]}
 
-    for checkpoint in range(config(["NUM_CHECKPOINTS"])):
-        with open(config["PROJECT_DIR"] + "/eval_data/trajectories_" + str(checkpoint) + ".pkl", "rb") as f:
+    for checkpoint in range(config["NUM_CHECKPOINTS"]):
+        with open(trial_dir+ "/eval_data/trajectories" + str(checkpoint) + ".pkl", "rb") as f:
             checkpoint_trajs = pickle.load(f)
 
-        for eval_trial in range(len(checkpoint_trajs)):
-            trial_trajs = checkpoint_trajs[eval_trial]
+        checkpoint_trajs = next(iter(checkpoint_trajs))
+        for eval_trial in range(config["num_eval_trials"]):
+            #trial_trajs = checkpoint_trajs[eval_trial]
             action_conformism = []
             for step in range(episode_length):
                 all_actions = []
                 for agent in range(config["NUM_AGENTS"]):
-                    all_actions.append(trial_trajs["agent_" + str(agent)][step]["action"])
-
-                    """
-
-                    inventory = trial_trajs["agent_" + str(agent)][step]["action"]
-                    for el, exists in enumerate(inventory):
-                        if exists:
-                            for recipe_item in recipe_book:
-                                if recipe_item[2] == el:
-                                    paths[int(recipe_item[4])] += 1
-                                    current_paths.append(recipe_item[4])
-                                    agent_paths[int(recipe_item[4])] += 1
-                    """
+                    action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step]["action"])
+                    all_actions.append(action) # I was running two eval trials but tasks are deterministic
 
                 counts = Counter(all_actions)
                 # Find the element with the maximum count
                 majority = max(counts, key=counts.get)
                 action_conformism.append( onp.sum([1 if el == majority else 0 for el in all_actions]) / config["NUM_AGENTS"])
+                
+            volatility = []
+            for agent in range(config["NUM_AGENTS"]):
+                changes= 0
+
+                for step in range(1,episode_length):
+                    action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step]["action"])
+                    prev_action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step-1]["action"])
+
+                    if action != prev_action:
+                        changes+=1
+                volatility.append(changes/episode_length)
+                    
 
 
-            traj_metrics["action_conformism"].append(onp.mean(action_conformism))
 
+            traj_metrics["action_conformism"][checkpoint].append(onp.mean(action_conformism))
+            traj_metrics["volatility"][checkpoint].append(onp.mean(volatility))
+
+    for key, el in traj_metrics.items():
+        traj_metrics[key] = onp.array(el)
 
     return traj_metrics
 
@@ -181,7 +178,9 @@ def leaderboard(top_dir):
                     "diversity_mean",
                     "diversity_max",
                     "diversity_proper_mean",
-                    "diversity_proper_max"]
+                    "diversity_proper_max",
+                    "action_conformism",
+                    "volatility"]
     # make lineplots
     plt.figure(figsize=(8, 6))
     for metric_name in metric_names:
@@ -210,12 +209,12 @@ def leaderboard(top_dir):
 
 
 
-def process_project(config):
+def process_project(config, trial_dir):
 
     logger_hash = config["aim_hash"]
 
     # load aim info
-    aim_dir = "server_aim/jeanzay"
+    aim_dir = "."
 
     repo = Repo(aim_dir)  # Use `.` for the current directory or provide a specific path
 
@@ -224,6 +223,8 @@ def process_project(config):
                     "loss",
                     "returns",
                     "returns_max",
+                    "group_diversity_mean",
+
                     "diversity_mean",
                     "diversity_max",
                     "diversity_proper_mean",
@@ -272,7 +273,8 @@ def process_project(config):
     # save metrics with time
 
 
-    all_beh_metrics = traj_metrics(config)
+    all_beh_metrics = get_trajectory_metrics(config, trial_dir)
+    #all_beh_metrics = {}
 
     return all_metrics, all_beh_metrics, run_summary
 
@@ -311,6 +313,7 @@ def viz_metrics(project_dir, metrics, beh_metrics):
 
         # Plot using seaborn lineplot, with error bars indicating the standard deviation
         plt.figure(figsize=(8, 6))
+        print(df_sorted[metric])
         sns.lineplot(data=df_sorted, x='timesteps', y=metric, ci='sd', label='Mean Reward')
 
         # Customize plot
@@ -328,7 +331,7 @@ def viz_metrics(project_dir, metrics, beh_metrics):
 
 def process_projects(task, connectivity):
 
-    project_dir = "projects/for_leaderboard/LA/" + task + "/" + connectivity
+    project_dir = "projects/leaderboard/" + task + "/" + connectivity
     num_trials = 10
 
     save_dir = project_dir + "/eval"
@@ -346,7 +349,7 @@ def process_projects(task, connectivity):
         with open(trial_dir + "/config.yaml", "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        metric_values, beh_metric_values, run_summary = process_project(config)
+        metric_values, beh_metric_values, run_summary = process_project(config, trial_dir)
         for key, values in run_summary.items():
             total_eval_summary[key].append(values)
 
@@ -388,13 +391,16 @@ def process_projects(task, connectivity):
 
 
 def process_all_projects():
-    top_dir = "projects/for_leaderboard/LA/single_path/independent"
+    top_dir = "projects/leaderboard/single_path/independent"
 
     tasks = ["single_path", "merging_paths", "bestoftenpaths"]
-    tasks = ["Single-path-alchemy", "Merging-paths-alchemy"]
-    tasks = ["Merging-paths-alchemy"]
+    tasks = ["Single-path-alchemy","Merging-paths-alchemy"]
+    #tasks = ["Merging-paths-alchemy"]
 
-    connectivities = ["independent", "dynamic"]
+    #connectivities = ["independent", ]
+    connectivities = ["fully", "independent", "dynamic"]
+    #connectivities = ["dynamic"]
+
 
     for task in tasks:
         for connectivity in connectivities:
@@ -402,7 +408,7 @@ def process_all_projects():
 
 
 def all_leaderboard():
-    top_dirs =["projects/for_leaderboard/LA/Merging-paths-alchemy" ]
+    top_dirs =["projects/leaderboard/Merging-paths-alchemy" ]
     for top_dir in top_dirs:
         leaderboard(top_dir)
 
@@ -410,4 +416,4 @@ if __name__ == "__main__":
 
    process_all_projects()
 
-   all_leaderboard()
+   #all_leaderboard()
