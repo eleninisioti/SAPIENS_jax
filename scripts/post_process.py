@@ -57,9 +57,9 @@ def get_trajectory_metrics(config, trial_dir):
 
     # get action conformism
 
-    traj_metrics = {"action_conformism": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
-                    "path_conformism": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
-                    "volatility": [ [] for checkpoint in range(config["NUM_CHECKPOINTS"])],
+    traj_metrics = {"action_conformism": [ 0 for checkpoint in range(config["NUM_CHECKPOINTS"])],
+                    "path_conformism": [ 0 for checkpoint in range(config["NUM_CHECKPOINTS"])],
+                    "volatility": [ 0 for checkpoint in range(config["NUM_CHECKPOINTS"])],
                     "timesteps": [checkpoint for checkpoint in range(config["NUM_CHECKPOINTS"])]}
 
     for checkpoint in range(config["NUM_CHECKPOINTS"]):
@@ -67,40 +67,62 @@ def get_trajectory_metrics(config, trial_dir):
             checkpoint_trajs = pickle.load(f)
 
         checkpoint_trajs = next(iter(checkpoint_trajs))
-        for eval_trial in range(config["num_eval_trials"]):
-            #trial_trajs = checkpoint_trajs[eval_trial]
-            action_conformism = []
-            for step in range(episode_length):
-                all_actions = []
-                for agent in range(config["NUM_AGENTS"]):
-                    action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step]["action"])
-                    all_actions.append(action) # I was running two eval trials but tasks are deterministic
-
-                counts = Counter(all_actions)
-                # Find the element with the maximum count
-                majority = max(counts, key=counts.get)
-                action_conformism.append( onp.sum([1 if el == majority else 0 for el in all_actions]) / config["NUM_AGENTS"])
-                
-            volatility = []
+        #trial_trajs = checkpoint_trajs[eval_trial]
+        action_conformism = []
+        for step in range(episode_length):
+            all_actions = []
             for agent in range(config["NUM_AGENTS"]):
-                changes= 0
+                action = int(checkpoint_trajs["agent_" + str(agent)][0][step]["action"])
+                all_actions.append(action) # I was running two eval trials but tasks are deterministic
 
-                for step in range(1,episode_length):
-                    action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step]["action"])
-                    prev_action = int(checkpoint_trajs["agent_" + str(agent)][eval_trial][step-1]["action"])
+            counts = Counter(all_actions)
+            # Find the element with the maximum count
+            majority = max(counts, key=counts.get)
+            action_conformism.append( onp.sum([1 if el == majority else 0 for el in all_actions]) / config["NUM_AGENTS"])
 
-                    if action != prev_action:
-                        changes+=1
-                volatility.append(changes/episode_length)
-                    
+        traj_metrics["action_conformism"][checkpoint]=onp.mean(action_conformism)
+
+    total_volatility = []
+    for agent in range(config["NUM_AGENTS"]):
+        changes = 0
+        volatility = []
+        for checkpoint in range(1,config["NUM_CHECKPOINTS"]):
+            with open(trial_dir+ "/eval_data/trajectories" + str(checkpoint) + ".pkl", "rb") as f:
+                checkpoint_trajs = pickle.load(f)
+            checkpoint_trajs = next(iter(checkpoint_trajs))
+
+            trajectory = []
+            for step in range(episode_length):
+                trajectory.append(checkpoint_trajs["agent_" + str(agent)][0][step]["action"])
+
+            with open(trial_dir + "/eval_data/trajectories" + str(checkpoint-1) + ".pkl", "rb") as f:
+                checkpoint_trajs = pickle.load(f)
+            checkpoint_trajs = next(iter(checkpoint_trajs))
+
+            prev_trajectory = []
+            for step in range(episode_length):
+                prev_trajectory.append(checkpoint_trajs["agent_" + str(agent)][0][step]["action"])
+
+
+            if trajectory != prev_trajectory:
+                changes += 1
 
 
 
-            traj_metrics["action_conformism"][checkpoint].append(onp.mean(action_conformism))
-            traj_metrics["volatility"][checkpoint].append(onp.mean(volatility))
+            volatility.append(changes/(config["NUM_CHECKPOINTS"]-1))
 
-    for key, el in traj_metrics.items():
-        traj_metrics[key] = onp.array(el)
+        total_volatility.append(volatility)
+
+    final_volatility = [0]
+
+    for checkpoint in range(config["NUM_CHECKPOINTS"]-1):
+        final_volatility.append(onp.mean([el[checkpoint] for el in total_volatility]))
+
+
+    traj_metrics["volatility"] = final_volatility
+
+    #for key, el in traj_metrics.items():
+    #    traj_metrics[key] = onp.array([onp.mean(eval_el) for eval_el in el])
 
     return traj_metrics
 
@@ -214,7 +236,7 @@ def process_project(config, trial_dir):
     logger_hash = config["aim_hash"]
 
     # load aim info
-    aim_dir = "."
+    aim_dir = "aim_server"
 
     repo = Repo(aim_dir)  # Use `.` for the current directory or provide a specific path
 
@@ -394,10 +416,10 @@ def process_all_projects():
     top_dir = "projects/leaderboard/single_path/independent"
 
     tasks = ["single_path", "merging_paths", "bestoftenpaths"]
-    tasks = ["Single-path-alchemy","Merging-paths-alchemy"]
+    tasks = ["Single-path-alchemy", "Merging-paths-alchemy"]
     #tasks = ["Merging-paths-alchemy"]
 
-    #connectivities = ["independent", ]
+    connectivities = ["independent", ]
     connectivities = ["fully", "independent", "dynamic"]
     #connectivities = ["dynamic"]
 

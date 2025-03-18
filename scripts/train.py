@@ -17,17 +17,20 @@ def parametric(env_name):
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 320]
     visit_duration_values =[360]
+    prob_visit_values = [0.01, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
 
     for trial in range(10):
 
-        for visit_duration in visit_duration_values:
-            for eps_start in eps_start_values:
-                #for eps_end in eps_end_values:
-                eps_end = 0.05
-                for num_agents in [10]:
-                    for connectivity in ["fully", "independent", "dynamic" ]:
+        for prob_visit_value in prob_visit_values:
 
-                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial, local_mode=True)
+            for visit_duration in visit_duration_values:
+                for eps_start in eps_start_values:
+                    #for eps_end in eps_end_values:
+                    eps_end = 0.05
+                    for num_agents in [10]:
+                        for connectivity in [ "dynamic" ]:
+
+                            main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=prob_visit_value, visit_duration=visit_duration,  trial=trial, local_mode=True)
 
 
 
@@ -87,4 +90,4 @@ if __name__ == "__main__":
              "Merging-paths-alchemy",
              "Bestoften-paths-alchemy" ]
 
-    fully(tasks[int(sys.argv[2])])
+    parametric(tasks[int(sys.argv[2])])
