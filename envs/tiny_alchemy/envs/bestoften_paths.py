@@ -58,7 +58,7 @@ class Bestoftenpaths(Base):
 
                 key, current_key = jax.random.split(key)
                 second_item = jax.random.choice(current_key, init_items)
-                result = step + n_init_items + max_steps_in_episode*(path_idx)
+                result = step + init_items[-1] + 1
                 reward = step + 1
                 reward = jnp.where(lucky_path, reward*2, reward)
                 new_comb = jnp.array([first_item, second_item, result, reward])
