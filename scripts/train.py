@@ -16,6 +16,7 @@ def parametric(env_name):
     eps_start_values = [ 1]
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 740 ]
+    visit_duration_values = [12]
     
 
     for trial in range(10):
@@ -89,6 +90,6 @@ if __name__ == "__main__":
              "Merging-paths-alchemy",
              "Bestoften-paths-alchemy" ]
 
-    parametric(tasks[int(sys.argv[2])])
+    #parametric(tasks[int(sys.argv[2])])
     bestoften(tasks[int(sys.argv[2])])
 
