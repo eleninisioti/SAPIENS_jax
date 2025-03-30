@@ -29,6 +29,7 @@ class Bestoftenpaths(Base):
 
     def __init__(self, key, recipe="single-path"):
         super().__init__(key)
+        self.episode_length = 16
 
         self.obs_shape = (14,)
 
@@ -64,18 +65,21 @@ class Bestoftenpaths(Base):
                 recipe = recipe.at[step].set(new_comb)
 
                 first_item = result
-            return recipe
+            return recipe, init_items
         #idxs = jnp.arange(10)
         total_recipe = []
 
         # pick lucky path
         lucky_path = jax.random.choice(key, 10)
+        total_init_items = []
         for i in range(10):
-            recipe = sample_path(keys[i], i, lucky_path==i)
+            recipe, init_items = sample_path(keys[i], i, lucky_path==i)
             total_recipe.append(recipe)
+            total_init_items.append(init_items)
         recipe = jnp.concatenate(total_recipe, axis=0)
         items = jax.numpy.zeros((n_total_items*10,))
-        items = items.at[:n_init_items].set(1)
+        total_init_items = jnp.concatenate(total_init_items)
+        items = items.at[total_init_items].set(1)
 
         return recipe, items
 

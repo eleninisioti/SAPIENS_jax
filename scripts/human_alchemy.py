@@ -49,6 +49,8 @@ def get_best_actions(env_name):
         actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
     elif env_name == "Merging-paths-alchemy":
         actions = [2, 0, 3, 0, 11,12,14,13,4,15, 22,0,23,13,24,0,25,2,26,6,27,13,28,1]
+    elif env_name == "Bestoften-paths-alchemy":
+        actions = [101, 100, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
         #actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
 
     return actions
@@ -62,11 +64,11 @@ def play_episode(game, episode_idx):
     env = alchemy_envs.get_environment(env_name, key=jax.random.PRNGKey(0))
 
     states = []
-    jit_reset =jax.jit(env.reset)
+    #jit_reset =jax.jit(env.reset)
     jit_reset =env.reset
     key =random.PRNGKey(episode_idx+1)
-    obs, state = jit_reset(key)
-
+    #obs, state = jit_reset(key)
+    obs, state = env.reset(key)
     cum_reward = 0
     action = jnp.array([0, 0 , 1, 0])
     jit_step =jax.jit(env.step)
@@ -75,6 +77,8 @@ def play_episode(game, episode_idx):
 
     print(state.recipe_book)
     actions = get_best_actions(env_name)
+    
+    print()
 
     #actions = [3, 0]
 
@@ -132,4 +136,4 @@ if __name__ == "__main__":
     print("You are the discrete fish robot. \n"
           "You have only four actions: moving left ('a'), moving right ('d'), moving forward ('w') and moving backward ('s').")
 
-    play_game(n_episodes=1, game="Merging-paths-alchemy")
+    play_game(n_episodes=1, game="Bestoften-paths-alchemy")

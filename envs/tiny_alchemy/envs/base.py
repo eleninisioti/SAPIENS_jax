@@ -5,7 +5,8 @@ from gymnax.environments import environment, spaces
 from typing import Tuple, Optional
 import chex
 from flax import struct
-
+import os
+os.environ["JAX_PLATFORM_NAME"] = "cpu"
 
 @struct.dataclass
 class EnvState:

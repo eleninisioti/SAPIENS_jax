@@ -236,7 +236,7 @@ def process_project(config, trial_dir):
     logger_hash = config["aim_hash"]
 
     # load aim info
-    aim_dir = "aim_server"
+    aim_dir = "."
 
     repo = Repo(aim_dir)  # Use `.` for the current directory or provide a specific path
 
@@ -353,74 +353,78 @@ def viz_metrics(project_dir, metrics, beh_metrics):
 
 def process_projects(task, connectivity):
 
-    project_dir = "projects/leaderboard/" + task + "/" + connectivity 
-    num_trials = 10
+    project_dir = "projects/leaderboard/" + task + "/" + connectivity + "_parametric"
+    
+    projects = [os.path.join(project_dir, el) for el in os.listdir(project_dir)]
+    for project_dir in projects:
+        print(project_dir)
+        num_trials = 4
 
-    save_dir = project_dir + "/eval"
+        save_dir = project_dir + "/eval"
 
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
 
-    total_eval_summary = defaultdict(list)
+        total_eval_summary = defaultdict(list)
 
-    total_metrics = defaultdict(list)
-    total_beh_metrics = defaultdict(list)
-    for trial in range(num_trials):
-        trial_dir = os.path.join(project_dir, "trial_" + str(trial))
+        total_metrics = defaultdict(list)
+        total_beh_metrics = defaultdict(list)
+        for trial in range(num_trials):
+            trial_dir = os.path.join(project_dir, "trial_" + str(trial))
 
-        with open(trial_dir + "/config.yaml", "r") as f:
-            config = yaml.load(f, Loader=yaml.SafeLoader)
+            with open(trial_dir + "/config.yaml", "r") as f:
+                config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        metric_values, beh_metric_values, run_summary = process_project(config, trial_dir)
-        for key, values in run_summary.items():
-            total_eval_summary[key].append(values)
+            metric_values, beh_metric_values, run_summary = process_project(config, trial_dir)
+            for key, values in run_summary.items():
+                total_eval_summary[key].append(values)
 
-        for key, values in metric_values.items():
-            total_metrics[key].extend(values)
+            for key, values in metric_values.items():
+                total_metrics[key].extend(values)
 
-        for key, values in beh_metric_values.items():
-            total_beh_metrics[key].extend(values)
-
-
-    mean_stats = {}
-    for key, val in total_eval_summary.items():
-        val = [el  for el in val if el is not None ]
-
-        if len(val):
-            mean_value = float(sum(val)/len(val))
-
-            variance = sum((x - mean_value) ** 2 for x in val) / len(val)
-            std_dev = math.sqrt(variance)
-        else:
-            mean_value = 0
-            std_dev = 0
+            for key, values in beh_metric_values.items():
+                total_beh_metrics[key].extend(values)
 
 
+        mean_stats = {}
+        for key, val in total_eval_summary.items():
+            val = [el  for el in val if el is not None ]
 
-        mean_stats["mean_" + key] = mean_value
-        mean_stats["std_" + key] = std_dev
+            if len(val):
+                mean_value = float(sum(val)/len(val))
 
-    with open(save_dir + "/eval_info.yaml", "w") as f:
-        yaml.dump(mean_stats, f)
+                variance = sum((x - mean_value) ** 2 for x in val) / len(val)
+                std_dev = math.sqrt(variance)
+            else:
+                mean_value = 0
+                std_dev = 0
 
 
-    with open(save_dir + "/metrics.pkl", "wb") as f:
-        pickle.dump(total_metrics, f)
+
+            mean_stats["mean_" + key] = mean_value
+            mean_stats["std_" + key] = std_dev
+
+        with open(save_dir + "/eval_info.yaml", "w") as f:
+            yaml.dump(mean_stats, f)
 
 
-    viz_metrics(save_dir, total_metrics, total_beh_metrics)
+        with open(save_dir + "/metrics.pkl", "wb") as f:
+            pickle.dump(total_metrics, f)
+
+
+        viz_metrics(save_dir, total_metrics, total_beh_metrics)
 
 
 
 def process_all_projects():
 
     tasks = ["single_path", "merging_paths", "bestoftenpaths"]
-    tasks = ["Single-path-alchemy", "Merging-paths-alchemy", "Bestoften-paths-alchemy"]
-    tasks = ["Bestoften-paths-alchemy"]
+    tasks = ["Single-path-alchemy", "Merging-paths-alchemy"]
+    tasks = ["Merging-paths-alchemy"]
 
     connectivities = ["independent", ]
     connectivities = ["fully", "independent", "dynamic"]
-    #connectivities = ["dynamic"]
+    connectivities = ["dynamic"]
 
 
     for task in tasks:
