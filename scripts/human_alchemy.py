@@ -50,7 +50,7 @@ def get_best_actions(env_name):
     elif env_name == "Merging-paths-alchemy":
         actions = [2, 0, 3, 0, 11,12,14,13,4,15, 22,0,23,13,24,0,25,2,26,6,27,13,28,1]
     elif env_name == "Bestoften-paths-alchemy":
-        actions = [101, 100, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
+        actions = [24, 24, 19,22,20,22,21,24,22,24,23,22,24,23,25,24]
         #actions = [2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2] +[2, 0, 3, 0, 4,2,5,2, 6,1,7,1,8,1,9,2]
 
     return actions
