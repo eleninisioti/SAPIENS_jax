@@ -16,7 +16,7 @@ def parametric(env_name):
     eps_start_values = [ 1]
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 740 ]
-    visit_duration_values = [5]
+    visit_duration_values = [360]
     
 
     for trial in range(10):
@@ -30,7 +30,7 @@ def parametric(env_name):
                     for num_agents in [10]:
                         for connectivity in [ "dynamic" ]:
 
-                            main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.1, visit_duration=visit_duration_value,  trial=trial, local_mode=True)
+                            main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration_value,  trial=trial, local_mode=True)
 
 
 

@@ -414,7 +414,7 @@ def make_train(config, logger_run):
                             config["CONNECTIVITY"] == "dynamic"
                         )  # training interval
                         & (  # pure exploration phase ended
-                            jnp.all(train_state.visiting== 0)
+                            train_state.visiting[visiting_agent] == 0
                         )  # training interval
 
                 )
@@ -636,7 +636,7 @@ def make_train(config, logger_run):
             #if config.get("WANDB_MODE", "disabled") == "online":
 
             def callback(metrics, neighbors, visiting, group_indexes):
-                if metrics["timesteps"] % 1 == 0:
+                if metrics["timesteps"] % 100 == 0:
 
 
                     for key, value in metrics.items():
@@ -646,7 +646,7 @@ def make_train(config, logger_run):
 
                     print(metrics["returns_max"])
 
-
+                    """
                     save_dir = config["project_dir"] + "/neighbors"
                     if not os.path.exists(save_dir):
                         os.makedirs(save_dir)
@@ -664,6 +664,7 @@ def make_train(config, logger_run):
                         os.makedirs(save_dir)
                     with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
                         pickle.dump(group_indexes, f)
+                    """
 
 
                     #wandb.log({"neighbors": wandb.Image(})
@@ -897,7 +898,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 200,
+                       "Single-path-alchemy": 1e6,
                        "Merging-paths-alchemy": 2e6,
                        "Bestoften-paths-alchemy": 8e7
                        }
