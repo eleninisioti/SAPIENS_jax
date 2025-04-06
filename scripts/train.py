@@ -16,7 +16,7 @@ def parametric(env_name):
     eps_start_values = [ 1]
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 740 ]
-    visit_duration_values = [12]
+    visit_duration_values = [5]
     
 
     for trial in range(10):
@@ -34,7 +34,7 @@ def parametric(env_name):
 
 
 
-def bestoften(env_name):
+def run_task(env_name):
 
     lr_values = [1e-4]
     lr = lr_values[0]
@@ -42,9 +42,9 @@ def bestoften(env_name):
     eps_start_values = [ 1]
     eps_end_values = [0.05]
     visit_duration_values = [10, 80, 160, 320]
-    visit_duration_values =[360]
+    visit_duration_values =[5]
 
-    for trial in range(10):
+    for trial in range(1):
 
         for visit_duration in visit_duration_values:
             for eps_start in eps_start_values:
@@ -53,7 +53,7 @@ def bestoften(env_name):
                 for num_agents in [10]:
                     for connectivity in [ "dynamic" ]:
 
-                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.01, visit_duration=visit_duration,  trial=trial, local_mode=True)
+                        main(env_name, learning_rate=lr, num_agents=num_agents, connectivity=connectivity, shared_batch_size=1, prob_visit=0.1, visit_duration=visit_duration,  trial=trial, local_mode=True)
 
 
 
@@ -91,5 +91,5 @@ if __name__ == "__main__":
              "Bestoften-paths-alchemy" ]
 
     #parametric(tasks[int(sys.argv[2])])
-    bestoften(tasks[int(sys.argv[2])])
+    run_task(tasks[int(sys.argv[2])])
 

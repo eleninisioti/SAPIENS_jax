@@ -241,10 +241,11 @@ def make_train(config, logger_run):
                 # we distribute the experiences based on neighborhood
                 def get_exps_for_agent(group_shared_exp, receiver_id):
                     agent_neighbors = jnp.take(train_state.neighbors, receiver_id, axis=0)
-                    fixed_neighbor = agent_neighbors[0]
+                    #fixed_neighbor = receiver_id # ah here I assumed that the first neighbor is correct which is not the case with the new dynamic
 
-                    dummy_exp = jax.tree_map(lambda x: jnp.take(jnp.take(x, fixed_neighbor, axis=0), receiver_id, axis=0),
-                                             group_shared_exp)
+                    #dummy_exp = jax.tree_map(lambda x: jnp.take(jnp.take(x, fixed_neighbor, axis=0), receiver_id, axis=0),
+                    #                         group_shared_exp)
+                    dummy_exp = jax.tree_map(lambda x: x[receiver_id, ...], timestep)
 
                     def get_exp_from_neighbor(neighbor_id):
                         received_exp = jax.tree_map(
@@ -402,11 +403,11 @@ def make_train(config, logger_run):
                 value = (
                         #(buffer.can_sample(buffer_state))
                         #&
-                        (  # enough experience in buffer
-                                train_state.timesteps[visiting_agent]> config["LEARNING_STARTS"]
-                        )
+                        #(  # enough experience in buffer
+                        #        train_state.timesteps[visiting_agent]> config["LEARNING_STARTS"]
+                        #)
 
-                        & (  # pure exploration phase ended
+                         (  # pure exploration phase ended
                                jax.random.uniform(key) < config["PROB_VISIT"]
                         )  # training interval
                         & (  # pure exploration phase ended
@@ -465,11 +466,14 @@ def make_train(config, logger_run):
                 train_state = train_state.replace(
                     visiting=train_state.visiting.at[visiting_agent].set(train_state.timesteps[visiting_agent]))
 
+                train_state = train_state.replace(group_indexes=train_state.group_indexes.at[visiting_agent].set(receiving_group))
+
                 return train_state
 
             def _check_visit(train_state, is_visit_time,  key, visiting_agent):
 
-                receiving_group= jax.random.choice(key, jnp.arange(config["NUM_GROUPS"]))  # ensuring that an agent cannot visit itself
+                weights = jnp.where(jnp.arange(config["NUM_GROUPS"]) == train_state.group_indexes[visiting_agent], 0, 1)
+                receiving_group= jax.random.choice(key, jnp.arange(config["NUM_GROUPS"]), p=weights)  # ensuring that an agent cannot visit itself
                 #receiving_group = 0
 
                 train_state = jax.lax.cond(is_visit_time,
@@ -480,9 +484,42 @@ def make_train(config, logger_run):
 
             def _implement_return(train_state, returning_agent):
 
-                group = config["initial_group_indexes"][returning_agent]
+                init_group = config["initial_group_indexes"][returning_agent]
 
-                agents = jnp.arange(config["NUM_AGENTS"])
+                # inform current neighbors that you are leaving
+                old_neighbors = jnp.where(train_state.group_indexes == train_state.group_indexes[returning_agent],
+                                          jnp.arange(config["NUM_AGENTS"]),-1 )
+                def update_neighbors(neighbor_idx, agent_idx):
+                    new_neighbors = train_state.neighbors[neighbor_idx, ...]
+                    new_neighbors = new_neighbors.at[returning_agent].set(-1)
+                    new_neighbors = jnp.where(neighbor_idx != -1, new_neighbors,
+                                              train_state.neighbors[agent_idx, ...]) # dont understand this
+                    return new_neighbors
+
+                old_neighbors = jax.vmap(update_neighbors)(old_neighbors, jnp.arange(config["NUM_AGENTS"]))
+                train_state = train_state.replace(neighbors=old_neighbors)
+
+                # inform neighbors that you are returning
+                old_neighbors = jnp.where(train_state.group_indexes == init_group,jnp.arange(config["NUM_AGENTS"]),-1 )
+                def update_neighbors(neighbor_idx, agent_idx):
+                    new_neighbors = train_state.neighbors[neighbor_idx, ...]
+                    new_neighbors = new_neighbors.at[returning_agent].set(returning_agent)
+                    new_neighbors = jnp.where(neighbor_idx != -1, new_neighbors,
+                                              train_state.neighbors[agent_idx, ...]) # dont understand this
+                    return new_neighbors
+
+                temp_neighbors = jax.vmap(update_neighbors)(old_neighbors, jnp.arange(config["NUM_AGENTS"]))
+                train_state = train_state.replace(neighbors=temp_neighbors)
+
+                new_neighbors = jnp.where(jnp.arange(config["NUM_AGENTS"])==returning_agent, -1, old_neighbors)
+
+                train_state = train_state.replace(
+                    neighbors=train_state.neighbors.at[returning_agent, ...].set(new_neighbors))
+                train_state = train_state.replace(
+                    visiting=train_state.visiting.at[returning_agent].set(0))
+                train_state = train_state.replace(
+                    group_indexes=train_state.group_indexes.at[returning_agent].set(init_group))
+                """
                 new_neighbors = jnp.where(train_state.group_indexes == group, agents, -1)
 
                 # inform new neighbors that you came
@@ -509,11 +546,12 @@ def make_train(config, logger_run):
                 train_state = train_state.replace(neighbors=temp_neighbors)
 
                 new_neighbors = jnp.where(jnp.arange(config["NUM_AGENTS"])==returning_agent, -1, new_neighbors)
+                
                 train_state = train_state.replace(
                     neighbors=train_state.neighbors.at[returning_agent, ...].set(new_neighbors))
                 train_state = train_state.replace(
                     visiting=train_state.visiting.at[returning_agent].set(0))
-
+                """
 
                 return train_state
 
@@ -597,8 +635,8 @@ def make_train(config, logger_run):
             # report on wandb if required
             #if config.get("WANDB_MODE", "disabled") == "online":
 
-            def callback(metrics, neighbors, visiting):
-                if metrics["timesteps"] % 100 == 0:
+            def callback(metrics, neighbors, visiting, group_indexes):
+                if metrics["timesteps"] % 1 == 0:
 
 
                     for key, value in metrics.items():
@@ -608,7 +646,7 @@ def make_train(config, logger_run):
 
                     print(metrics["returns_max"])
 
-                    """
+
                     save_dir = config["project_dir"] + "/neighbors"
                     if not os.path.exists(save_dir):
                         os.makedirs(save_dir)
@@ -620,8 +658,12 @@ def make_train(config, logger_run):
                         os.makedirs(save_dir)
                     with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
                         pickle.dump(visiting, f)
-                    """
 
+                    save_dir = config["project_dir"] + "/groups"
+                    if not os.path.exists(save_dir):
+                        os.makedirs(save_dir)
+                    with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
+                        pickle.dump(group_indexes, f)
 
 
                     #wandb.log({"neighbors": wandb.Image(})
@@ -629,7 +671,7 @@ def make_train(config, logger_run):
 
 
 
-            jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting)
+            jax.debug.callback(callback, metrics, train_state.neighbors, train_state.visiting, train_state.group_indexes)
 
             #env_state = jax.tree_map(lambda x: jnp.expand_dims(x, -1),env_state)
 
@@ -855,7 +897,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
     total_timesteps = {"CartPole-v1": 8e5,
                        "MountainCar-v0": 8e6,
                        "Freeway-MinAtar": 8e6,
-                       "Single-path-alchemy": 1e6,
+                       "Single-path-alchemy": 200,
                        "Merging-paths-alchemy": 2e6,
                        "Bestoften-paths-alchemy": 8e7
                        }
