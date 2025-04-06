@@ -413,7 +413,7 @@ def make_train(config, logger_run):
                             config["CONNECTIVITY"] == "dynamic"
                         )  # training interval
                         & (  # pure exploration phase ended
-                            train_state.visiting[visiting_agent] == 0
+                            jnp.all(train_state.visiting== 0)
                         )  # training interval
 
                 )
@@ -530,12 +530,17 @@ def make_train(config, logger_run):
             if config["CONNECTIVITY"] == "dynamic":
 
                 agents = jnp.arange(config["NUM_AGENTS"])
-                visiting_agent =jax.random.choice(_rng, agents)
+                _rng, current_rng = jax.random.split(_rng)
+
+                visiting_agent =jax.random.choice(current_rng, agents)
                 #visiting_agent = 2
 
-                is_visit_time = is_visit_time(train_state, _rng, visiting_agent)
+                _rng, current_rng = jax.random.split(_rng)
 
-                train_state = _check_visit(train_state, is_visit_time,_rng, visiting_agent)
+                is_visit_time = is_visit_time(train_state, current_rng, visiting_agent)
+                _rng, current_rng = jax.random.split(_rng)
+
+                train_state = _check_visit(train_state, is_visit_time,current_rng, visiting_agent)
                 is_return_time = jax.vmap(is_return_time)(train_state)
                 weights = jnp.where(is_return_time, 1, 0)
                 returning_agent = jax.random.choice(_rng, agents, shape=(), p=weights)
@@ -578,6 +583,8 @@ def make_train(config, logger_run):
                 "updates": train_state.n_updates[...,0],
                 "loss": loss.mean(),
                 "returns": info["returned_episode_returns"].mean(),
+                "returns_max": info["returned_episode_returns"].max(),
+
                 "loss_max": loss.max(),
                 "diversity_mean": train_state.buffer_diversity.mean(),
                 "diversity_max": train_state.buffer_diversity.max(),
@@ -599,7 +606,9 @@ def make_train(config, logger_run):
 
                     print("current step " + str(metrics["timesteps"]))
 
+                    print(metrics["returns_max"])
 
+                    """
                     save_dir = config["project_dir"] + "/neighbors"
                     if not os.path.exists(save_dir):
                         os.makedirs(save_dir)
@@ -611,6 +620,7 @@ def make_train(config, logger_run):
                         os.makedirs(save_dir)
                     with open(save_dir + "/step_" + str(metrics["timesteps"]) + ".pkl", "wb") as f:
                         pickle.dump(visiting, f)
+                    """
 
 
 
@@ -872,7 +882,7 @@ def main(env_name , num_agents, connectivity, shared_batch_size, prob_visit, vis
         "EPSILON_FRACTION": 0.2,
         "TARGET_UPDATE_INTERVAL": 10000,
         "LR": learning_rate,
-        "LEARNING_STARTS": 10,
+        "LEARNING_STARTS": 10000,
         "TRAINING_INTERVAL": 4,
         "DIVERSITY_INTERVAL": 100,
         "MAX_DIVERSITY": 5000,
