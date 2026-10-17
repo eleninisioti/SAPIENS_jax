@@ -4,7 +4,7 @@ from envs.tiny_alchemy.envs import bestoften_paths
 
 from envs.tiny_alchemy.envs.base import Base
 
-_envs = {"Single-path-alchemy": single_path.Singlepath,
+REGISTRY = {"Single-path-alchemy": single_path.Singlepath,
         "Merging-paths-alchemy": merging_paths.Mergingpaths,
          "Bestoften-paths-alchemy": bestoften_paths.Bestoftenpaths
 
@@ -20,4 +20,4 @@ def get_environment(env_name, **kwargs) -> Base:
   Returns:
     env: an environment
   """
-  return _envs[env_name](**kwargs)
+  return REGISTRY[env_name](**kwargs)

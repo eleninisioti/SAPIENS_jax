@@ -1,0 +1,7 @@
+# Sparse reward: doing nothing is a local optimum, reaching the flag ends the episode early
+ENV_NAME: MountainCar-v0
+TOTAL_STEPS: 2_000_000
+SHARE_INTERVAL: 16
+LR: 1.0e-3
+SUCCESS_THRESHOLD: -199
+LOG_INTERVAL: 20_000

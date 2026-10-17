@@ -1,0 +1,4 @@
+# Ten paths, only one leads to the global optimum
+ENV_NAME: Bestoften-paths-alchemy
+TOTAL_STEPS: 20_000_000
+LOG_INTERVAL: 100_000

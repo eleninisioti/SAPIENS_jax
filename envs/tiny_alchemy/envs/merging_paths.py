@@ -19,6 +19,7 @@ class EnvState:
 class EnvParams:
     max_steps_in_episode: int = 8
     n_init_items: int = 6
+    task_key: chex.Array = None
     n_total_items: int = 26
 
 
@@ -27,16 +28,17 @@ class Mergingpaths(Base):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, key, recipe="single-path"):
+    optimal_return = 50.0
+
+    def __init__(self, key=None):
         super().__init__(key)
         self.episode_length = 16
-        self.obs_shape = (14,)
 
 
     @property
     def default_params(self) -> EnvParams:
         # Default environment parameters for CartPole-v1
-        return EnvParams()
+        return EnvParams(task_key=self.key)
 
     def build_recipe_book(self, key, params):
         #init_items = jnp.arange(params.n_init_items)
@@ -87,7 +89,7 @@ class Mergingpaths(Base):
         # make middle branch, it will have four elements
         max_steps_in_episode_half = int(max_steps_in_episode/2)
         first_item = (n_init_items+max_steps_in_episode)*2
-        recipe = jnp.zeros((max_steps_in_episode, 4)) # first item, second item, result
+        recipe = jnp.zeros((max_steps_in_episode + 1, 4)) # first item, second item, result
         reward_init = 8
         recipe=  recipe.at[0].set(jnp.array([recipe_first[1][-2], recipe_second[1][-2], first_item, reward_init]))
 

@@ -19,6 +19,7 @@ class EnvState:
 class EnvParams:
     max_steps_in_episode: int = 8
     n_init_items: int = 3
+    task_key: chex.Array = None
     n_total_items: int = 11
 
 
@@ -27,17 +28,18 @@ class Singlepath(Base):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, key, recipe="single-path"):
+    optimal_return = 36.0
+
+    def __init__(self, key=None):
         super().__init__(key)
 
-        self.obs_shape = (14,)
         self.episode_length = 16
 
 
     @property
     def default_params(self) -> EnvParams:
         # Default environment parameters for CartPole-v1
-        return EnvParams()
+        return EnvParams(task_key=self.key)
 
     def build_recipe_book(self, key, params):
 

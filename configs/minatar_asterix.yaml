@@ -1,0 +1,10 @@
+# MinAtar Asterix (standard DQN benchmark, 10x10 image observations flattened)
+ENV_NAME: Asterix-MinAtar
+TOTAL_STEPS: 5_000_000
+HIDDEN: [256, 256]
+LR: 2.5e-4
+BATCH_SIZE: 64
+TARGET_UPDATE_INTERVAL: 1_000
+SHARE_INTERVAL: 16
+LOG_INTERVAL: 50_000
+EVAL_EPISODES: 4

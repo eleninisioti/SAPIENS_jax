@@ -5,8 +5,6 @@ from gymnax.environments import environment, spaces
 from typing import Tuple, Optional
 import chex
 from flax import struct
-import os
-os.environ["JAX_PLATFORM_NAME"] = "cpu"
 
 @struct.dataclass
 class EnvState:
@@ -27,10 +25,10 @@ class Base(environment.Environment):
     Simplified version of Little Alchemy
     """
 
-    def __init__(self, key, recipe="single-path"):
+    def __init__(self, key=None):
         super().__init__()
-        self.key = key
-        self.obs_shape = (4,)
+        # default task instance; override per run through params.task_key
+        self.key = jax.random.PRNGKey(0) if key is None else key
 
 
 
@@ -46,7 +44,8 @@ class Base(environment.Environment):
             A_first_two_columns = A[:, :2]
 
             # Step 2: Compare the first two columns of A with B
-            matching_rows = jnp.all(A_first_two_columns == B, axis=1)
+            # combinations are unordered, as in Wordcraft: a + b == b + a
+            matching_rows = jnp.all(A_first_two_columns == B, axis=1) | jnp.all(A_first_two_columns == B[::-1], axis=1)
 
             # Step 3: Find the index of the matching row
             # Use jnp.argmax to get the first index where there's a True (assumes one match)
@@ -97,7 +96,7 @@ class Base(environment.Environment):
         self, key: chex.PRNGKey, params: EnvParams
     ) -> Tuple[chex.Array, EnvState]:
         """Performs resetting of environment."""
-        recipe_book, items = self.build_recipe_book(self.key, params)
+        recipe_book, items = self.build_recipe_book(params.task_key, params)
 
         state = EnvState(
             recipe_book=recipe_book,

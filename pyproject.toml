@@ -1,0 +1,30 @@
+[project]
+name = "sapiens"
+version = "0.2.0"
+description = "Experience sharing over social network structures in groups of DQN agents (JAX)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "jax[cuda12]>=0.4.35; sys_platform == 'linux'",
+    "jax>=0.4.35; sys_platform != 'linux'",
+    "flax>=0.10",
+    "optax>=0.2",
+    "chex>=0.1.87",
+    "gymnax>=0.0.8",
+    "networkx>=3.0",
+    "numpy",
+    "pyyaml",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

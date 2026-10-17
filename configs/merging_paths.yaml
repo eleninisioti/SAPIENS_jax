@@ -1,0 +1,3 @@
+# Two paths that are local optima on their own; combining them reaches the global optimum
+ENV_NAME: Merging-paths-alchemy
+TOTAL_STEPS: 2_000_000

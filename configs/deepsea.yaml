@@ -1,0 +1,4 @@
+# bsuite DeepSea: moving right costs a little, the treasure is only reached by always moving right
+ENV_NAME: DeepSea-bsuite
+TOTAL_STEPS: 1_000_000
+SUCCESS_THRESHOLD: 0.9

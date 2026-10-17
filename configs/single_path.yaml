@@ -1,0 +1,3 @@
+# Wordcraft-style task with a single innovation path (no local optima)
+ENV_NAME: Single-path-alchemy
+TOTAL_STEPS: 1_000_000
