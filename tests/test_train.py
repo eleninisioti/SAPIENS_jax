@@ -4,17 +4,21 @@ import numpy as onp
 import pytest
 
 from sapiens.envs import Env
-from sapiens.train import load_config, make_train
+from sapiens.train import LEARNERS, load_config
 from sapiens import topology
 
 SMALL = ["TOTAL_STEPS=4000", "LOG_INTERVAL=1000", "LEARNING_STARTS=500", "BUFFER_SIZE=3000",
          "BATCH_SIZE=32", "NUM_AGENTS=6", "TARGET_UPDATE_INTERVAL=500"]
 
 
-def _run(overrides, seeds=2):
-    cfg = load_config(None, SMALL + overrides)
+def _run(overrides, seeds=2, small=SMALL):
+    cfg = load_config(None, small + overrides)
     env = Env(cfg["ENV_NAME"])
-    train = jax.jit(jax.vmap(make_train(cfg, env, return_buffers=True)))
+    if cfg["ALGO"] == "dqn":
+        make = lambda: LEARNERS["dqn"].make_train(cfg, env, return_buffers=True)
+    else:
+        make = lambda: (lambda *a: (*LEARNERS["vtrace"].make_train(cfg, env)(*a), None))
+    train = jax.jit(jax.vmap(make()))
     rngs = jnp.stack([jax.random.PRNGKey(s) for s in range(seeds)])
     tasks = jnp.stack([jax.random.PRNGKey(100 + s) for s in range(seeds)])
     adj = jnp.stack([topology.initial_adjacency(cfg, s) for s in range(seeds)])
@@ -63,3 +67,37 @@ def test_single_path_is_learned():
                             "LOG_INTERVAL=10000", "LEARNING_STARTS=2000", "TARGET_UPDATE_INTERVAL=1000",
                             "LR=1e-3", "EPS_FRACTION=0.3", "BUFFER_SIZE=20000"], seeds=2)
     assert metrics["eval_return"][:, -1].max() >= 36.0 - 1e-6
+
+
+def test_dqn_with_parallel_envs_and_centralized_learner():
+    cfg, metrics, _ = _run(["TOPOLOGY=centralized", "NUM_ENVS=8", "TRAIN_INTERVAL=4"], seeds=1)
+    assert metrics["received"].sum() == 0
+    assert onp.isfinite(metrics["loss"]).all()
+
+
+VTRACE = ["ALGO=vtrace", "NUM_AGENTS=4", "NUM_ENVS=8", "ROLLOUT_LEN=16", "LR=1e-3", "HIDDEN=[64,64]"]
+
+
+@pytest.mark.parametrize("topo", ["fully", "dynamic", "independent", "centralized"])
+def test_vtrace_runs_and_shares(topo):
+    _, metrics, _ = _run(VTRACE + [f"TOPOLOGY={topo}", "TOTAL_STEPS=8192", "LOG_INTERVAL=2048",
+                                   "SHARE_BATCH=2", "P_VISIT=0.05", "VISIT_DURATION=200"], seeds=2, small=[])
+    assert onp.isfinite(metrics["loss"]).all()
+    assert (metrics["received"].sum() > 0) == (topo in ("fully", "dynamic"))
+
+
+def test_vtrace_learns_cartpole():
+    _, metrics, _ = _run(VTRACE + ["ENV_NAME=CartPole-v1", "TOPOLOGY=independent", "NUM_AGENTS=2",
+                                   "TOTAL_STEPS=150000", "LOG_INTERVAL=15360", "NUM_ENVS=16", "ROLLOUT_LEN=32",
+                                   "LR=2.5e-3", "EVAL_GREEDY=True"], seeds=1, small=[])
+    assert metrics["eval_return"][0, -3:].max() >= 195
+
+
+def test_vtrace_targets_match_n_step_returns_on_policy():
+    """With rho = 1 and no termination, V-trace targets are the discounted returns bootstrapped at T."""
+    from sapiens.vtrace import vtrace
+    r = jnp.array([1.0, 0.0, 2.0])
+    v = jnp.array([0.5, 0.2, 0.1])
+    vs, _ = vtrace(v, jnp.array(3.0), r, jnp.zeros(3), jnp.ones(3), 0.9, 1.0, 1.0)
+    expected = [1 + 0.9 * 0 + 0.81 * 2 + 0.729 * 3, 0 + 0.9 * 2 + 0.81 * 3, 2 + 0.9 * 3]
+    onp.testing.assert_allclose(vs, expected, rtol=1e-5)

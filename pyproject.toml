@@ -17,6 +17,7 @@ dependencies = [
     "scipy",
     "matplotlib",
     "seaborn",
+    "craftax>=1.6.1",
 ]
 
 [dependency-groups]

@@ -8,6 +8,9 @@ Static structures (independent, fully, ring, small_world) never change. Two dyna
             VISIT_DURATION steps. Agents share only with members of their current group.
 * periodic: the group alternates between no sharing for T_LOW steps and full connectivity
             for T_HIGH steps.
+
+`centralized` is the standard distributed-RL baseline: no experience sharing between learners
+because there is a single learner (one network, trained on the pooled data of all actors).
 """
 import chex
 import jax
@@ -15,7 +18,7 @@ import jax.numpy as jnp
 import networkx as nx
 import numpy as onp
 
-TOPOLOGIES = ("independent", "fully", "ring", "small_world", "dynamic", "periodic")
+TOPOLOGIES = ("independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized")
 
 
 @chex.dataclass(frozen=True)
@@ -40,7 +43,7 @@ def initial_adjacency(cfg, seed: int) -> onp.ndarray:
     n, topo = cfg["NUM_AGENTS"], cfg["TOPOLOGY"]
     if topo not in TOPOLOGIES:
         raise ValueError(f"Unknown topology {topo}, expected one of {TOPOLOGIES}")
-    if topo in ("independent", "periodic") or n == 1:
+    if topo in ("independent", "periodic", "centralized") or n == 1:
         # periodic starts in its low-connectivity phase
         return onp.zeros((n, n), bool)
     if topo == "fully":
@@ -67,8 +70,8 @@ def init_state(cfg, adj0) -> TopoState:
                      visit_end=-jnp.ones((n,), jnp.int32))
 
 
-def step(state: TopoState, key: chex.PRNGKey, t, cfg) -> TopoState:
-    """Advances the graph by one environment step (t = global step index)."""
+def step(state: TopoState, key: chex.PRNGKey, t, cfg, dt=1) -> TopoState:
+    """Advances the graph to step t (steps per agent), `dt` steps after the previous call."""
     topo, n = cfg["TOPOLOGY"], cfg["NUM_AGENTS"]
     if topo == "periodic":
         period = cfg["T_LOW"] + cfg["T_HIGH"]
@@ -81,7 +84,8 @@ def step(state: TopoState, key: chex.PRNGKey, t, cfg) -> TopoState:
     k_start, k_target = jax.random.split(key)
     at_home = state.visit_end < 0
     returning = ~at_home & (t >= state.visit_end)
-    leaving = at_home & (jax.random.uniform(k_start, (n,)) < cfg["P_VISIT"])
+    p_leave = 1.0 - (1.0 - cfg["P_VISIT"]) ** dt  # P_VISIT is per step
+    leaving = at_home & (jax.random.uniform(k_start, (n,)) < p_leave)
     # offset in [1, g) guarantees the visited group differs from the home group
     target = (state.home + jax.random.randint(k_target, (n,), 1, g)) % g
 

@@ -12,6 +12,8 @@ Metrics (per seed, from greedy evaluations at every log step):
   conformity  fraction of agents following the majority trajectory, averaged over training
   volatility  fraction of evaluations at which an agent's trajectory changed
   diversity   unique (s, a) pairs per buffer and in the union of the group's buffers
+  achievements (Craftax) fraction of seeds in which some agent of the group unlocked each
+              achievement during the final evaluation
 """
 import argparse
 import os
@@ -26,11 +28,12 @@ import pandas as pd
 import yaml
 from scipy import stats
 
-TOPOLOGY_ORDER = ["independent", "fully", "ring", "small_world", "dynamic", "periodic"]
+TOPOLOGY_ORDER = ["independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized"]
 LABELS = {"independent": "no-sharing", "fully": "fully-connected", "ring": "ring",
-          "small_world": "small-world", "dynamic": "dynamic", "periodic": "periodic"}
+          "small_world": "small-world", "dynamic": "dynamic", "periodic": "periodic",
+          "centralized": "centralized"}
 # fixed categorical slots (reference palette, light mode): colour follows the topology
-COLORS = dict(zip(TOPOLOGY_ORDER, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"]))
+COLORS = dict(zip(TOPOLOGY_ORDER, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6"]))
 INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e6e5e0"
 
 
@@ -73,6 +76,10 @@ def run_metrics(run):
     out["volatility"] = (hashes[:, 1:] != hashes[:, :-1]).mean((1, 2))
     out["diversity"] = m["diversity"].mean((1, 2))
     out["group_diversity"] = m["group_diversity"].mean(1)
+    if m.get("achievements") is not None and m["achievements"].shape[-1] > 0:
+        # (seeds, logs, agents, achievements) -> group unlocked it in the final evaluation
+        out["achievements"] = (m["achievements"][:, -1].max(1) > 0).astype(float)   # (seeds, achievements)
+        out["num_achievements"] = out["achievements"].sum(-1)
     return out
 
 
@@ -150,6 +157,25 @@ def plot_bars(groups, key, ylabel, path):
     plt.close(fig)
 
 
+def plot_achievements(groups, names, path):
+    """Heatmap of achievement unlock rates: rows ordered from easiest to hardest overall."""
+    topos = [t for t in TOPOLOGY_ORDER if t in groups]
+    rates = onp.array([groups[t]["achievements"].mean(0) for t in topos]).T      # (achievements, topologies)
+    order = onp.argsort(-rates.mean(1), kind="stable")
+    fig, ax = plt.subplots(figsize=(1.2 + 0.9 * len(topos), 0.28 * len(names) + 1.2))
+    im = ax.imshow(rates[order], cmap="Blues", vmin=0, vmax=1, aspect="auto")
+    ax.set_xticks(range(len(topos)), [LABELS[t] for t in topos], rotation=30, ha="right", color=INK_2)
+    ax.set_yticks(range(len(names)), [names[i].replace("_", " ") for i in order], fontsize=7, color=INK_2)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.04)
+    cbar.set_label("Fraction of seeds unlocked", color=INK_2)
+    cbar.outline.set_visible(False)
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("sweep_dir")
@@ -165,14 +191,15 @@ def main():
         by_group[run["group"]][run["cfg"]["TOPOLOGY"]] = met
         row = dict(group=run["group"], topology=LABELS[run["cfg"]["TOPOLOGY"]], seeds=len(met["final_best_return"]))
         for k, v in met.items():
-            row[k], row[k + "_ci95"] = float(onp.mean(v)), float(ci95(v))
+            if k != "achievements":
+                row[k], row[k + "_ci95"] = float(onp.mean(v)), float(ci95(v))
         rows.append(row)
     pd.DataFrame(rows).to_csv(os.path.join(args.sweep_dir, "summary.csv"), index=False)
 
     with open(os.path.join(args.sweep_dir, "stats.txt"), "w") as f:
         for group, groups in by_group.items():
             f.write(f"{group}\n")
-            for key in ("S", "T_first", "final_best_return", "group_diversity"):
+            for key in ("S", "T_first", "final_best_return", "num_achievements", "group_diversity"):
                 if all(key in g for g in groups.values()):
                     f.write(significance(groups, key))
 
@@ -184,11 +211,14 @@ def main():
                     lambda y: y.mean(-1))
         plot_curves(group_runs, "group_diversity", "Group diversity (unique s, a)",
                     os.path.join(fig_dir, f"{group}__group_diversity.png"), None)
+        if all("achievements" in g for g in groups.values()):
+            names = group_runs[0]["cfg"].get("achievement_names") or [str(i) for i in range(len(next(iter(groups.values()))["achievements"][0]))]
+            plot_achievements(groups, names, os.path.join(fig_dir, f"{group}__achievements.png"))
         if all("S" in g for g in groups.values()):
             plot_bars(groups, "S", "Group success", os.path.join(fig_dir, f"{group}__success.png"))
             plot_bars(groups, "T_first", "Time to first success", os.path.join(fig_dir, f"{group}__time_to_success.png"))
     print(pd.DataFrame(rows).to_string(index=False, columns=["group", "topology", "seeds"] +
-                                       [c for c in ("S", "T_first", "final_best_return", "group_diversity") if c in rows[0]]))
+                                       [c for c in ("S", "T_first", "final_best_return", "num_achievements", "group_diversity") if c in rows[0]]))
 
 
 if __name__ == "__main__":

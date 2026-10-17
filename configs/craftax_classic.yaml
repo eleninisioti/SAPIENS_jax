@@ -1,0 +1,19 @@
+# Craftax-Classic (Crafter in JAX): a tree of 22 achievements, from collecting wood to diamonds.
+# Agents plateau on the easy achievements; deep ones (iron, diamond) need sustained exploration.
+ENV_NAME: Craftax-Classic-Symbolic-v1
+ALGO: vtrace
+NUM_AGENTS: 10
+NUM_ENVS: 64
+ROLLOUT_LEN: 64
+TOTAL_STEPS: 100_000_000
+HIDDEN: [512, 512]
+LR: 2.0e-4
+ENT_COEF: 0.01
+SHARE_BATCH: 8
+LOG_INTERVAL: 1_048_576
+EVAL_EPISODES: 4
+EVAL_GREEDY: false
+VISIT_DURATION: 2_000_000
+P_VISIT: 1.0e-7
+T_LOW: 5_000_000
+T_HIGH: 500_000

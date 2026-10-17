@@ -12,7 +12,7 @@ import itertools
 import os
 import subprocess
 
-TOPOLOGIES = ["independent", "fully", "ring", "small_world", "dynamic", "periodic"]
+TOPOLOGIES = ["independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized"]
 ALCHEMY = ["single_path", "merging_paths", "bestoften_paths"]
 TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
                "minatar_spaceinvaders", "minatar_asterix"]
@@ -21,6 +21,11 @@ TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
 SWEEPS = {
     "smoke": [("merging_paths", {"TOPOLOGY": ["fully", "dynamic"], "TOTAL_STEPS": [200_000]}, 4, 1)],
     "pilot": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
+    "pilot_vtrace": [(c, {"TOPOLOGY": TOPOLOGIES, "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [16],
+                          "LR": [1e-3], "LOG_INTERVAL": [10_240]}, 20, 6) for c in ["merging_paths", "deepsea"]],
+    "craftax_bench": [("craftax_classic", {"TOPOLOGY": ["dynamic"], "TOTAL_STEPS": [4_194_304]}, 1, 2),
+                      ("craftax_classic", {"TOPOLOGY": ["dynamic"], "TOTAL_STEPS": [4_194_304]}, 4, 2)],
+    "craftax": [("craftax_classic", {"TOPOLOGY": TOPOLOGIES}, 5, 24)],
     "topologies": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 12) for c in ALCHEMY + TRADITIONAL[:2]]
                   + [(c, {"TOPOLOGY": TOPOLOGIES}, 10, 24) for c in TRADITIONAL[2:]],
     "group_size": [(c, {"TOPOLOGY": TOPOLOGIES, "NUM_AGENTS": [2, 6, 20, 50]}, 20, 12)
@@ -37,7 +42,7 @@ def expand(sweep):
     for config, grid, seeds, hours in SWEEPS[sweep]:
         keys = list(grid)
         for values in itertools.product(*(grid[k] for k in keys)):
-            name = "__".join([config] + [f"{k}={v}" for k, v in zip(keys, values)])
+            name = "__".join([config] + [f"{k}={v}" for k, v in zip(keys, values)] + [f"seeds={seeds}"] * (sweep == "craftax_bench"))
             args = f"--config configs/{config}.yaml --num_seeds {seeds} --set " + " ".join(
                 f"{k}={v}" for k, v in zip(keys, values))
             runs.append((name, args, hours))
