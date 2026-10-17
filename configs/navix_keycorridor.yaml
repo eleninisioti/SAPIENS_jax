@@ -1,0 +1,9 @@
+# MiniGrid KeyCorridorS3R2 (NAVIX): search rooms for a key that unlocks the room with the ball
+ENV_NAME: Navix-KeyCorridorS3R2-v0
+NETWORK: cnn
+HIDDEN: [128]
+TOTAL_STEPS: 3_000_000
+SHARE_INTERVAL: 16
+LOG_INTERVAL: 30_000
+EVAL_EPISODES: 4
+SUCCESS_METRIC: goal

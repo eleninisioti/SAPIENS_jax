@@ -14,7 +14,8 @@ import jax.numpy as jnp
 import optax
 
 from sapiens import topology
-from sapiens.common import ActorCritic, count_unique, hash_transitions, hash_weights, init_params, make_evaluate, pooled_grads
+from sapiens.common import (ActorCritic, conv_shape, count_unique, disagreement, hash_transitions, hash_weights,
+                            init_params, make_evaluate, pooled_grads)
 
 
 def steps_per_update(cfg):
@@ -50,12 +51,27 @@ def make_train(cfg, env):
     centralized = cfg["TOPOLOGY"] == "centralized"
     sharing = cfg["TOPOLOGY"] not in ("independent", "centralized") and n > 1
     n_received = n * share_batch if sharing else 0
-    network = ActorCritic(env.num_actions, tuple(cfg["HIDDEN"]))
+    network = ActorCritic(env.num_actions, tuple(cfg["HIDDEN"]), conv_shape(cfg, env))
     tx = optax.chain(optax.clip_by_global_norm(cfg["MAX_GRAD_NORM"]), optax.adam(cfg["LR"], eps=1e-5))
 
     def eval_act(p, obs, key):
         logits, _ = network.apply(p, obs)
         return logits.argmax() if cfg["EVAL_GREEDY"] else jax.random.categorical(key, logits)
+
+    def group_disagreement(params, obs):
+        probe = obs.reshape(-1, env.obs_dim)  # current observations of all agents
+        actions = jax.vmap(lambda p: network.apply(p, probe)[0].argmax(-1))(params)
+        return disagreement(actions, env.num_actions)
+
+    def adapt(s, t):
+        returns = jnp.where(s["adapt_count"] > 0, s["adapt_sum"] / jnp.maximum(s["adapt_count"], 1), -jnp.inf)
+        topo = topology.adapt(s["topo"], t, cfg, group_disagreement(s["params"], s["obs"]), returns)
+        return dict(s, topo=topo, adapt_sum=jnp.zeros((n,)), adapt_count=jnp.zeros((n,)))
+
+    def maybe_adapt(s, t):
+        if cfg["TOPOLOGY"] not in topology.ADAPTIVE:
+            return s
+        return jax.lax.cond(t % cfg["ADAPT_INTERVAL"] < update_steps, lambda s: adapt(s, t), lambda s: s, s)
 
     evaluate = make_evaluate(env, eval_act, cfg["EVAL_STEPS"] or env.max_steps, cfg["EVAL_EPISODES"])
     vreset = jax.vmap(jax.vmap(env.reset, in_axes=(0, None)), in_axes=(0, None))
@@ -92,7 +108,7 @@ def make_train(cfg, env):
             topo=topology.init_state(cfg, adj0), ep_return=jnp.zeros((n, n_envs)),
             ret_sum=zeros, ret_count=zeros, loss_sum=zeros, loss_count=zeros, received=zeros,
             batch_hash=jnp.zeros((n, batch_size), jnp.uint32), batch_valid=jnp.zeros((n, batch_size), bool),
-            rng=rng,
+            adapt_sum=zeros, adapt_count=zeros, rng=rng,
         )
 
         def env_step(s, t):
@@ -108,6 +124,8 @@ def make_train(cfg, env):
                 s, env_state=env_state, obs=next_obs, rng=rng,
                 ret_sum=s["ret_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
                 ret_count=s["ret_count"] + done.sum(-1),
+                adapt_sum=s["adapt_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
+                adapt_count=s["adapt_count"] + done.sum(-1),
                 ep_return=jnp.where(done, 0.0, ep_return),
                 topo=topology.step(s["topo"], k_topo, t + n_envs, cfg, dt=n_envs),
             )
@@ -146,24 +164,26 @@ def make_train(cfg, env):
             s = dict(s, params=optax.apply_updates(s["params"], updates), opt=opt, rng=rng, received=received,
                      loss_sum=s["loss_sum"] + loss, loss_count=s["loss_count"] + 1,
                      batch_hash=hashes, batch_valid=valid)
-            return s, None
+            return maybe_adapt(s, t0 + update_steps), None
 
         def log_step(s, t0):
             s, _ = jax.lax.scan(update_step, s, t0 + jnp.arange(updates_per_log) * update_steps)
             rng, k_eval = jax.random.split(s["rng"])
-            eval_return, traj_hash, achievements = evaluate(s["params"], k_eval, env_params)
+            eval_return, traj_hash, achievements, eval_length = evaluate(s["params"], k_eval, env_params)
             metrics = dict(
                 step=t0 + cfg["LOG_INTERVAL"],
                 train_return=s["ret_sum"] / jnp.maximum(s["ret_count"], 1),
                 episodes=s["ret_count"],
                 loss=s["loss_sum"] / jnp.maximum(s["loss_count"], 1),
                 eval_return=eval_return,
+                eval_length=eval_length,
                 traj_hash=traj_hash,
                 achievements=achievements,
                 # diversity of the last learning batch (own and received trajectories)
                 diversity=jax.vmap(count_unique)(s["batch_hash"], s["batch_valid"]),
                 group_diversity=count_unique(s["batch_hash"].reshape(-1), s["batch_valid"].reshape(-1)),
                 received=s["received"],
+                disagreement=group_disagreement(s["params"], s["obs"]),
                 degree=s["topo"].adj.sum(1),
                 group=s["topo"].group,
             )

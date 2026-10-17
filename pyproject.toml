@@ -18,6 +18,8 @@ dependencies = [
     "matplotlib",
     "seaborn",
     "craftax>=1.6.1",
+    "navix>=0.7.4",
+    "kheperax>=0.2.0",
 ]
 
 [dependency-groups]

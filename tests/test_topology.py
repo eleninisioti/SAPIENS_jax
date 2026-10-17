@@ -52,3 +52,35 @@ def test_periodic_alternates():
     state = topology.init_state(c, topology.initial_adjacency(c, 0))
     degrees = [int(topology.step(state, jax.random.PRNGKey(0), t, c).adj.sum()) for t in range(10)]
     assert degrees == [0, 0, 0, 12, 12] * 2
+
+
+def _adaptive(topo, **kw):
+    c = cfg(TOPOLOGY=topo, NUM_AGENTS=4, **kw)
+    return c, topology.init_state(c, topology.initial_adjacency(c, 0))
+
+
+def test_adaptive_diversity_connects_when_diverse_and_isolates_when_converged():
+    c, s = _adaptive("adaptive_diversity", D_LOW=0.1, D_HIGH=0.3)
+    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.5), returns=jnp.zeros(4))
+    assert int(topology.step(s, jax.random.PRNGKey(0), 1, c).adj.sum()) == 12
+    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.2), returns=jnp.zeros(4))   # inside the band: stay
+    assert bool(s.connected)
+    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.05), returns=jnp.zeros(4))
+    assert int(topology.step(s, jax.random.PRNGKey(0), 1, c).adj.sum()) == 0
+
+
+def test_adaptive_discovery_broadcasts_only_after_improvement():
+    c, s = _adaptive("adaptive_discovery", T_HIGH=10)
+    s = topology.adapt(s, 0, c, None, returns=jnp.array([1.0, 2.0, -jnp.inf, 0.0]))  # first record: no broadcast
+    assert int(topology.step(s, jax.random.PRNGKey(0), 1, c).adj.sum()) == 0
+    s = topology.adapt(s, 100, c, None, returns=jnp.array([1.0, 2.0, 2.0, 0.0]))     # no improvement
+    assert int(topology.step(s, jax.random.PRNGKey(0), 101, c).adj.sum()) == 0
+    s = topology.adapt(s, 200, c, None, returns=jnp.array([3.0, 2.0, 2.0, 0.0]))     # discovery
+    assert int(topology.step(s, jax.random.PRNGKey(0), 205, c).adj.sum()) == 12
+    assert int(topology.step(s, jax.random.PRNGKey(0), 211, c).adj.sum()) == 0
+
+
+def test_disagreement():
+    from sapiens.common import disagreement
+    assert float(disagreement(jnp.array([[0, 1], [0, 1], [0, 1]]), 3)) == 0.0
+    onp.testing.assert_allclose(float(disagreement(jnp.array([[0, 0], [0, 1], [1, 2]]), 3)), 1 - (2 / 3 + 1 / 3) / 2)

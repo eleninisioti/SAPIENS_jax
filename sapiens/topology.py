@@ -9,6 +9,16 @@ Static structures (independent, fully, ring, small_world) never change. Two dyna
 * periodic: the group alternates between no sharing for T_LOW steps and full connectivity
             for T_HIGH steps.
 
+Two adaptive structures decide when to connect from what the group does, instead of a schedule:
+
+* adaptive_diversity: a thermostat on behavioural diversity. Every ADAPT_INTERVAL steps the group
+            measures how much its agents disagree (fraction of agents not taking the majority
+            greedy action on shared probe states). Once disagreement falls below D_LOW the group
+            has converged and isolates; once it rises above D_HIGH it reconnects fully to share.
+* adaptive_discovery: agents are isolated until one of them beats the best training return the
+            group has seen (by more than DISCOVERY_MARGIN); the group then connects fully for
+            T_HIGH steps so the discovery spreads.
+
 `centralized` is the standard distributed-RL baseline: no experience sharing between learners
 because there is a single learner (one network, trained on the pooled data of all actors).
 """
@@ -18,7 +28,8 @@ import jax.numpy as jnp
 import networkx as nx
 import numpy as onp
 
-TOPOLOGIES = ("independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized")
+ADAPTIVE = ("adaptive_diversity", "adaptive_discovery")
+TOPOLOGIES = ("independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized") + ADAPTIVE
 
 
 @chex.dataclass(frozen=True)
@@ -27,6 +38,9 @@ class TopoState:
     group: chex.Array      # (N,) current group (dynamic only)
     home: chex.Array       # (N,) home group (dynamic only)
     visit_end: chex.Array  # (N,) step at which the visit ends, -1 when at home
+    connected: chex.Array  # () adaptive_diversity: currently fully connected
+    high_until: chex.Array # () adaptive_discovery: fully connected until this step
+    best: chex.Array       # () adaptive_discovery: best training return seen by the group
 
 
 def num_groups(cfg) -> int:
@@ -43,7 +57,7 @@ def initial_adjacency(cfg, seed: int) -> onp.ndarray:
     n, topo = cfg["NUM_AGENTS"], cfg["TOPOLOGY"]
     if topo not in TOPOLOGIES:
         raise ValueError(f"Unknown topology {topo}, expected one of {TOPOLOGIES}")
-    if topo in ("independent", "periodic", "centralized") or n == 1:
+    if topo in ("independent", "periodic", "centralized") + ADAPTIVE or n == 1:
         # periodic starts in its low-connectivity phase
         return onp.zeros((n, n), bool)
     if topo == "fully":
@@ -67,7 +81,8 @@ def init_state(cfg, adj0) -> TopoState:
     n = cfg["NUM_AGENTS"]
     home = jnp.arange(n) // cfg["GROUP_SIZE"]
     return TopoState(adj=jnp.asarray(adj0, bool), group=home, home=home,
-                     visit_end=-jnp.ones((n,), jnp.int32))
+                     visit_end=-jnp.ones((n,), jnp.int32), connected=jnp.array(False),
+                     high_until=jnp.array(-1, jnp.int32), best=jnp.array(-jnp.inf))
 
 
 def step(state: TopoState, key: chex.PRNGKey, t, cfg, dt=1) -> TopoState:
@@ -77,6 +92,11 @@ def step(state: TopoState, key: chex.PRNGKey, t, cfg, dt=1) -> TopoState:
         period = cfg["T_LOW"] + cfg["T_HIGH"]
         high = (t % period) >= cfg["T_LOW"]
         return state.replace(adj=jnp.where(high, ~jnp.eye(n, dtype=bool), False))
+    full = ~jnp.eye(n, dtype=bool)
+    if topo == "adaptive_diversity":
+        return state.replace(adj=jnp.where(state.connected, full, False))
+    if topo == "adaptive_discovery":
+        return state.replace(adj=jnp.where(t < state.high_until, full, False))
     if topo != "dynamic" or num_groups(cfg) < 2:
         return state
 
@@ -92,3 +112,20 @@ def step(state: TopoState, key: chex.PRNGKey, t, cfg, dt=1) -> TopoState:
     group = jnp.where(leaving, target, jnp.where(returning, state.home, state.group))
     visit_end = jnp.where(leaving, t + cfg["VISIT_DURATION"], jnp.where(returning, -1, state.visit_end))
     return state.replace(adj=_from_groups(group), group=group, visit_end=visit_end.astype(jnp.int32))
+
+
+def adapt(state: TopoState, t, cfg, disagreement, returns) -> TopoState:
+    """Updates an adaptive structure every ADAPT_INTERVAL steps.
+
+    disagreement: scalar behavioural disagreement of the group; returns: (N,) mean training return
+    of each agent since the previous call (-inf for agents that finished no episode).
+    """
+    if cfg["TOPOLOGY"] == "adaptive_diversity":
+        connected = jnp.where(state.connected, disagreement >= cfg["D_LOW"], disagreement > cfg["D_HIGH"])
+        return state.replace(connected=connected)
+    if cfg["TOPOLOGY"] == "adaptive_discovery":
+        best_now = returns.max()
+        discovered = jnp.isfinite(state.best) & (best_now > state.best + cfg["DISCOVERY_MARGIN"])
+        return state.replace(best=jnp.maximum(state.best, best_now),
+                             high_until=jnp.where(discovered, t + cfg["T_HIGH"], state.high_until).astype(jnp.int32))
+    return state

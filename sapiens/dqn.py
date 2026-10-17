@@ -13,7 +13,8 @@ import optax
 
 from sapiens import buffer as rb
 from sapiens import topology
-from sapiens.common import MLP, count_unique, hash_transitions, hash_weights, init_params, make_evaluate, pooled_grads
+from sapiens.common import (MLP, conv_shape, count_unique, disagreement, hash_transitions, hash_weights, init_params,
+                            make_evaluate, pooled_grads)
 
 
 def steps_per_update(cfg):
@@ -30,7 +31,7 @@ def make_train(cfg, env, return_buffers=False):
     share_batch = cfg["SHARE_BATCH"]
     centralized = cfg["TOPOLOGY"] == "centralized"
     sharing = cfg["TOPOLOGY"] not in ("independent", "centralized") and n > 1
-    network = MLP(env.num_actions, tuple(cfg["HIDDEN"]))
+    network = MLP(env.num_actions, tuple(cfg["HIDDEN"]), conv_shape(cfg, env))
     tx = optax.adam(cfg["LR"])
     evaluate = make_evaluate(env, lambda p, obs, k: network.apply(p, obs).argmax(),
                              cfg["EVAL_STEPS"] or env.max_steps, cfg["EVAL_EPISODES"])
@@ -38,6 +39,21 @@ def make_train(cfg, env, return_buffers=False):
     def epsilon(t):
         frac = jnp.clip(t / (cfg["EPS_FRACTION"] * cfg["TOTAL_STEPS"]), 0.0, 1.0)
         return cfg["EPS_START"] + frac * (cfg["EPS_END"] - cfg["EPS_START"])
+
+    def group_disagreement(params, obs):
+        probe = obs.reshape(-1, env.obs_dim)  # current observations of all agents
+        actions = jax.vmap(lambda p: network.apply(p, probe).argmax(-1))(params)
+        return disagreement(actions, env.num_actions)
+
+    def adapt(s, t):
+        returns = jnp.where(s["adapt_count"] > 0, s["adapt_sum"] / jnp.maximum(s["adapt_count"], 1), -jnp.inf)
+        topo = topology.adapt(s["topo"], t, cfg, group_disagreement(s["params"], s["obs"]), returns)
+        return dict(s, topo=topo, adapt_sum=jnp.zeros((n,)), adapt_count=jnp.zeros((n,)))
+
+    def maybe_adapt(s, t):
+        if cfg["TOPOLOGY"] not in topology.ADAPTIVE:
+            return s
+        return jax.lax.cond(t % cfg["ADAPT_INTERVAL"] < update_steps, lambda s: adapt(s, t), lambda s: s, s)
 
     vreset = jax.vmap(jax.vmap(env.reset, in_axes=(0, None)), in_axes=(0, None))
     vstep = jax.vmap(jax.vmap(env.step, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, None))
@@ -55,7 +71,7 @@ def make_train(cfg, env, return_buffers=False):
             params=params, target=params, opt=jax.vmap(tx.init)(params), buf=buf,
             env_state=env_state, obs=obs, topo=topology.init_state(cfg, adj0),
             ep_return=jnp.zeros((n, n_envs)), ret_sum=zeros, ret_count=zeros, loss_sum=zeros,
-            loss_count=zeros, received=zeros, rng=rng,
+            loss_count=zeros, received=zeros, adapt_sum=zeros, adapt_count=zeros, rng=rng,
         )
 
         def env_step(s, t):
@@ -90,6 +106,8 @@ def make_train(cfg, env, return_buffers=False):
                 s, buf=buf, env_state=env_state, obs=next_obs, rng=rng, received=received,
                 ret_sum=s["ret_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
                 ret_count=s["ret_count"] + done.sum(-1),
+                adapt_sum=s["adapt_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
+                adapt_count=s["adapt_count"] + done.sum(-1),
                 ep_return=jnp.where(done, 0.0, ep_return),
                 topo=topology.step(s["topo"], k_topo, t + n_envs, cfg, dt=n_envs),
             )
@@ -121,12 +139,12 @@ def make_train(cfg, env, return_buffers=False):
                              lambda s: s, s)
             s = jax.lax.cond(t % cfg["TARGET_UPDATE_INTERVAL"] < update_steps,
                              lambda s: dict(s, target=s["params"]), lambda s: s, s)
-            return s, None
+            return maybe_adapt(s, t), None
 
         def log_step(s, t0):
             s, _ = jax.lax.scan(update_step, s, t0 + jnp.arange(updates_per_log) * update_steps)
             rng, k_eval = jax.random.split(s["rng"])
-            eval_return, traj_hash, achievements = evaluate(s["params"], k_eval, env_params)
+            eval_return, traj_hash, achievements, eval_length = evaluate(s["params"], k_eval, env_params)
             buf = s["buf"]
             hashes = jax.vmap(hash_transitions, in_axes=(0, 0, None, None))(buf.obs, buf.action, w_obs, w_act)
             valid = jax.vmap(rb.valid_mask)(buf)
@@ -136,11 +154,13 @@ def make_train(cfg, env, return_buffers=False):
                 episodes=s["ret_count"],
                 loss=s["loss_sum"] / jnp.maximum(s["loss_count"], 1),
                 eval_return=eval_return,
+                eval_length=eval_length,
                 traj_hash=traj_hash,
                 achievements=achievements,
                 diversity=jax.vmap(count_unique)(hashes, valid),
                 group_diversity=count_unique(hashes.reshape(-1), valid.reshape(-1)),
                 received=s["received"],
+                disagreement=group_disagreement(s["params"], s["obs"]),
                 degree=s["topo"].adj.sum(1),
                 group=s["topo"].group,
             )

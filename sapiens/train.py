@@ -31,6 +31,7 @@ DEFAULTS = dict(
     NUM_AGENTS=10,
     NUM_ENVS=1,                # parallel environments per agent
     TOTAL_STEPS=2_000_000,     # environment steps per agent, summed over its environments
+    NETWORK="mlp",             # mlp | cnn (MinAtar network: one conv layer, then HIDDEN)
     HIDDEN=[64, 64],
     # LR, GAMMA, EPS_FRACTION, TARGET_UPDATE_INTERVAL: tuned without sharing on the single-path task
     LR=1e-3,
@@ -63,13 +64,18 @@ DEFAULTS = dict(
     P_VISIT=0.01,              # per step
     VISIT_DURATION=360,        # steps
     T_LOW=1_600,
-    T_HIGH=160,
+    T_HIGH=160,                # periodic: connected phase; adaptive_discovery: broadcast window
+    ADAPT_INTERVAL=1_000,      # adaptive topologies: steps between decisions
+    D_LOW=0.05,                # adaptive_diversity: isolate below this disagreement
+    D_HIGH=0.2,                # adaptive_diversity: connect above this disagreement
+    DISCOVERY_MARGIN=0.0,      # adaptive_discovery: improvement over the group best that counts
     # logging and evaluation
     LOG_INTERVAL=10_000,
     EVAL_EPISODES=1,
     EVAL_STEPS=None,           # defaults to the environment's episode length
     EVAL_GREEDY=True,          # V-trace: argmax instead of sampling from the policy
     SUCCESS_THRESHOLD=None,    # defaults to the task optimum for alchemy tasks
+    SUCCESS_METRIC="return",   # return: eval return >= SUCCESS_THRESHOLD; goal: episode ended before EVAL_STEPS
 )
 
 
@@ -84,6 +90,15 @@ def run(cfg, num_seeds, seed_offset=0):
     metrics, params = train(rngs, task_keys, adj0)
     jax.block_until_ready(metrics)
     return jax.tree.map(onp.asarray, metrics), params, env
+
+
+def success(cfg, metrics, env):
+    """(seeds, logs, agents) boolean success of each greedy evaluation, or None if undefined."""
+    if cfg["SUCCESS_METRIC"] == "goal":
+        return metrics["eval_length"] < (cfg["EVAL_STEPS"] or env.max_steps)
+    if cfg["SUCCESS_THRESHOLD"] is None:
+        return None
+    return metrics["eval_return"] >= cfg["SUCCESS_THRESHOLD"] - 1e-6
 
 
 def parse_value(v):
@@ -147,8 +162,10 @@ def main():
     best = metrics["eval_return"].max(-1)  # (seeds, logs): best agent in the group
     summary = dict(elapsed_sec=elapsed, final_best_eval_return=best[:, -1].tolist(),
                    final_mean_eval_return=metrics["eval_return"][:, -1].mean(-1).tolist())
-    if cfg["SUCCESS_THRESHOLD"] is not None:
-        summary["group_success"] = (best >= cfg["SUCCESS_THRESHOLD"] - 1e-6).any(-1).mean().item()
+    ok = success(cfg, metrics, env)
+    if ok is not None:
+        summary["group_success"] = ok.any(-1).any(-1).mean().item()
+        summary["final_agents_successful"] = ok[:, -1].mean().item()
     with open(os.path.join(args.output, "summary.json"), "w") as f:
         json.dump(summary, f, indent=1)
     print(json.dumps({k: v for k, v in summary.items() if not isinstance(v, list)}))

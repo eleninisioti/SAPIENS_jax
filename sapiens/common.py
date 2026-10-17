@@ -5,11 +5,20 @@ import jax.numpy as jnp
 
 
 class MLP(nn.Module):
+    """Dense layers on flat observations; with obs_shape set, a conv layer first.
+
+    The conv torso is the MinAtar paper's network (Young & Tian, 2019): 16 3x3 filters, then dense.
+    """
     out: int
     hidden: tuple
+    obs_shape: tuple = None
 
     @nn.compact
     def __call__(self, x):
+        if self.obs_shape is not None:
+            x = x.reshape(*x.shape[:-1], *self.obs_shape)
+            x = nn.relu(nn.Conv(16, (3, 3))(x))
+            x = x.reshape(*x.shape[:-3], -1)
         for h in self.hidden:
             x = nn.relu(nn.Dense(h)(x))
         return nn.Dense(self.out)(x)
@@ -18,12 +27,24 @@ class MLP(nn.Module):
 class ActorCritic(nn.Module):
     num_actions: int
     hidden: tuple
+    obs_shape: tuple = None
 
     @nn.compact
     def __call__(self, x):
-        logits = MLP(self.num_actions, self.hidden)(x)
-        value = MLP(1, self.hidden)(x)[..., 0]
+        logits = MLP(self.num_actions, self.hidden, self.obs_shape)(x)
+        value = MLP(1, self.hidden, self.obs_shape)(x)[..., 0]
         return logits, value
+
+
+def conv_shape(cfg, env):
+    return tuple(env.obs_shape) if cfg["NETWORK"] == "cnn" else None
+
+
+def disagreement(actions, num_actions):
+    """actions: (agents, states) greedy actions on shared probe states. Returns the mean fraction
+    of agents that do not take the majority action (0 = full conformity)."""
+    counts = jax.nn.one_hot(actions, num_actions).sum(0)            # (states, actions)
+    return 1.0 - (counts.max(-1) / actions.shape[0]).mean()
 
 
 def init_params(network, key, n, obs_dim, shared):
@@ -65,7 +86,8 @@ def make_evaluate(env, act, eval_steps, episodes):
     """Rolls out every agent's policy from the same start states and action keys.
 
     act(params, obs, key) -> action. Returns per agent: mean return, a hash of the first
-    episode's action sequence (for conformity / volatility) and achievement rates.
+    episode's action sequence (for conformity / volatility), achievement rates and mean episode
+    length (episodes still running at the end count as eval_steps).
     """
 
     def rollout(p, key, env_params):
@@ -73,22 +95,22 @@ def make_evaluate(env, act, eval_steps, episodes):
         obs, es = env.reset(k_reset, env_params)
 
         def body(c, _):
-            obs, es, alive, ret, h, ach, key = c
+            obs, es, alive, ret, h, ach, length, key = c
             key, k_act, k_step = jax.random.split(key, 3)
             a = act(p, obs, k_act)
             obs, es, r, d = env.step(k_step, es, a, env_params)
             h = jnp.where(alive, h * jnp.uint32(1_000_003) + a.astype(jnp.uint32) + 1, h)
             ach = ach | (env.achievements(es) & alive & ~d)
-            return (obs, es, alive & ~d, ret + r * alive, h, ach, key), None
+            return (obs, es, alive & ~d, ret + r * alive, h, ach, length + alive, key), None
 
         init = (obs, es, jnp.array(True), jnp.array(0.0), jnp.uint32(0),
-                jnp.zeros((env.num_achievements,), bool), key)
-        (_, _, _, ret, h, ach, _), _ = jax.lax.scan(body, init, None, eval_steps)
-        return ret, h, ach
+                jnp.zeros((env.num_achievements,), bool), jnp.array(0.0), key)
+        (_, _, _, ret, h, ach, length, _), _ = jax.lax.scan(body, init, None, eval_steps)
+        return ret, h, ach, length
 
     def evaluate(params, key, env_params):
         keys = jax.random.split(key, episodes)
-        ret, h, ach = jax.vmap(lambda k: jax.vmap(rollout, in_axes=(0, None, None))(params, k, env_params))(keys)
-        return ret.mean(0), h[0], ach.mean(0)
+        ret, h, ach, length = jax.vmap(lambda k: jax.vmap(rollout, in_axes=(0, None, None))(params, k, env_params))(keys)
+        return ret.mean(0), h[0], ach.mean(0), length.mean(0)
 
     return evaluate

@@ -1,0 +1,8 @@
+# Kheperax deceptive maze: reward is minus the distance to the target, but the direct route is
+# blocked, so following the reward leads into a dead end (the classic deceptive maze)
+ENV_NAME: Kheperax-standard
+HIDDEN: [128, 128]
+TOTAL_STEPS: 5_000_000
+SHARE_INTERVAL: 16
+LOG_INTERVAL: 50_000
+SUCCESS_METRIC: goal

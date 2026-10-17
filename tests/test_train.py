@@ -101,3 +101,30 @@ def test_vtrace_targets_match_n_step_returns_on_policy():
     vs, _ = vtrace(v, jnp.array(3.0), r, jnp.zeros(3), jnp.ones(3), 0.9, 1.0, 1.0)
     expected = [1 + 0.9 * 0 + 0.81 * 2 + 0.729 * 3, 0 + 0.9 * 2 + 0.81 * 3, 2 + 0.9 * 3]
     onp.testing.assert_allclose(vs, expected, rtol=1e-5)
+
+
+@pytest.mark.parametrize("algo", ["dqn", "vtrace"])
+@pytest.mark.parametrize("topo", ["adaptive_diversity", "adaptive_discovery"])
+def test_adaptive_topologies_run(algo, topo):
+    extra = VTRACE + ["TOTAL_STEPS=8192", "LOG_INTERVAL=2048"] if algo == "vtrace" else []
+    _, metrics, _ = _run(extra + [f"TOPOLOGY={topo}", "ADAPT_INTERVAL=500", "T_HIGH=300"], seeds=2,
+                         small=[] if algo == "vtrace" else SMALL)
+    assert onp.isfinite(metrics["loss"]).all()
+    assert ((metrics["disagreement"] >= 0) & (metrics["disagreement"] <= 1)).all()
+
+
+def test_minatar_cnn_runs():
+    _, metrics, _ = _run(["ENV_NAME=Breakout-MinAtar", "NETWORK=cnn", "HIDDEN=[32]", "TOPOLOGY=periodic",
+                          "SHARE_INTERVAL=16", "T_LOW=500", "T_HIGH=200"], seeds=1)
+    assert onp.isfinite(metrics["loss"]).all()
+
+
+@pytest.mark.parametrize("env_name,extra", [
+    ("Navix-DoorKey-5x5-v0", ["NETWORK=cnn", "HIDDEN=[32]", "SUCCESS_METRIC=goal"]),
+    ("Kheperax-standard", ["SUCCESS_METRIC=goal", "EVAL_STEPS=200"]),
+])
+def test_navix_and_kheperax_run(env_name, extra):
+    _, metrics, buf = _run([f"ENV_NAME={env_name}", "TOPOLOGY=fully", "SHARE_INTERVAL=16"] + extra, seeds=1)
+    assert onp.isfinite(metrics["loss"]).all()
+    assert metrics["received"].sum() > 0
+    assert (metrics["eval_length"] > 0).all()

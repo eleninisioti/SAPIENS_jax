@@ -1,7 +1,8 @@
-# MinAtar Freeway (standard DQN benchmark, 10x10 image observations flattened)
+# MinAtar Freeway (standard DQN benchmark; 10x10 image observations, MinAtar paper network)
 ENV_NAME: Freeway-MinAtar
 TOTAL_STEPS: 5_000_000
-HIDDEN: [256, 256]
+NETWORK: cnn
+HIDDEN: [128]
 LR: 2.5e-4
 BATCH_SIZE: 64
 TARGET_UPDATE_INTERVAL: 1_000
