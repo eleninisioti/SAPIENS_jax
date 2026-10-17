@@ -18,9 +18,19 @@ ALCHEMY = ["single_path", "merging_paths", "bestoften_paths"]
 TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
                "minatar_spaceinvaders", "minatar_asterix"]
 
-# name -> list of (config, grid of overrides, number of seeds, hours)
+# name -> list of (config, grid of overrides, number of seeds, hours[, first seed])
 SWEEPS = {
     "smoke": [("merging_paths", {"TOPOLOGY": ["fully", "dynamic"], "TOTAL_STEPS": [200_000]}, 4, 1)],
+    # each topology's own parameters, tuned on seeds disjoint from the reported ones (0-19)
+    "topo_params": [("merging_paths", grid, 10, 4, 1000) for grid in [
+        {"TOPOLOGY": ["dynamic"], "P_VISIT": [0.001, 0.01, 0.1], "VISIT_DURATION": [16, 160, 1600]},
+        {"TOPOLOGY": ["periodic"], "T_LOW": [160, 1600, 16000], "T_HIGH": [16, 160, 1600]},
+        {"TOPOLOGY": ["ring"], "RING_K": [2, 4, 6]},
+        {"TOPOLOGY": ["small_world"], "SW_BETA": [0.05, 0.2, 0.5]},
+    ]],
+    "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
+    "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],
+                                  "TOPOLOGY": ["independent", "fully", "ring", "periodic", "centralized"]}, 20, 4)],
     "pilot2": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
     "pilot": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
     # shared DQN hyper-parameters, tuned without sharing on the task without local optima so that
@@ -45,11 +55,12 @@ SWEEPS = {
 
 def expand(sweep):
     runs = []
-    for config, grid, seeds, hours in SWEEPS[sweep]:
+    for config, grid, seeds, hours, *first_seed in SWEEPS[sweep]:
         keys = list(grid)
         for values in itertools.product(*(grid[k] for k in keys)):
             name = "__".join([config] + [f"{k}={v}" for k, v in zip(keys, values)] + [f"seeds={seeds}"] * (sweep == "craftax_bench"))
-            args = f"--config configs/{config}.yaml --num_seeds {seeds} --set " + " ".join(
+            offset = f" --seed_offset {first_seed[0]}" if first_seed else ""
+            args = f"--config configs/{config}.yaml --num_seeds {seeds}{offset} --set " + " ".join(
                 f"{k}={v}" for k, v in zip(keys, values))
             runs.append((name, args, hours))
     return runs

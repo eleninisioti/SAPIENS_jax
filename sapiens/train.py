@@ -103,7 +103,11 @@ def load_config(path=None, overrides=()):
             cfg.update({k: parse_value(v) if isinstance(v, str) else v for k, v in (yaml.safe_load(f) or {}).items()})
     for item in overrides:
         key, value = item.split("=", 1)
-        cfg[key] = parse_value(value)
+        if "." in key:  # nested override, e.g. ENV_KWARGS.size=24
+            key, sub = key.split(".", 1)
+            cfg[key] = dict(cfg.get(key) or {}, **{sub: parse_value(value)})
+        else:
+            cfg[key] = parse_value(value)
     unknown = set(cfg) - set(DEFAULTS)
     if unknown:
         raise KeyError(f"Unknown config keys {sorted(unknown)}")
