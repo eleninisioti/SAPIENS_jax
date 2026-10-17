@@ -13,7 +13,8 @@ import itertools
 import os
 import subprocess
 
-TOPOLOGIES = ["independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized"]
+TOPOLOGIES = ["independent", "fully", "ring", "small_world", "dynamic", "periodic", "centralized",
+              "adaptive_diversity", "adaptive_discovery"]
 ALCHEMY = ["single_path", "merging_paths", "bestoften_paths"]
 TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
                "minatar_spaceinvaders", "minatar_asterix"]
@@ -28,6 +29,9 @@ SWEEPS = {
         {"TOPOLOGY": ["ring"], "RING_K": [2, 4, 6]},
         {"TOPOLOGY": ["small_world"], "SW_BETA": [0.05, 0.2, 0.5]},
     ]],
+    # first pass on the standard benchmarks (5 seeds): does DQN learn, and do topologies differ?
+    "newenvs": [(c, {"TOPOLOGY": TOPOLOGIES}, 5, 6)
+                for c in ["minatar_freeway", "minatar_breakout", "navix_doorkey8", "kheperax"]],
     "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],
                                   "TOPOLOGY": ["independent", "fully", "ring", "periodic", "centralized"]}, 20, 4)],

@@ -1,6 +1,8 @@
 # MinAtar SpaceInvaders (standard DQN benchmark; 10x10 image observations, MinAtar paper network)
 ENV_NAME: SpaceInvaders-MinAtar
 TOTAL_STEPS: 5_000_000
+NUM_ENVS: 8
+GAMMA: 0.99
 NETWORK: cnn
 HIDDEN: [128]
 LR: 2.5e-4
