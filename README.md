@@ -5,6 +5,7 @@ structure affects a group's ability to escape local optima. Two learners:
 
 * `ALGO=dqn`: DQN agents that send each other transitions from their replay buffers.
 * `ALGO=vtrace`: actor-critic agents that send each other trajectories, corrected with V-trace (as in IMPALA).
+
 Follow-up to [Nisioti et al., 2022](https://arxiv.org/abs/2206.05060).
 
 A whole experiment (all agents and all seeds of one configuration) is one jitted function,
