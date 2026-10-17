@@ -60,7 +60,7 @@ CLUSTERS = {
     "real": [],
     # ITU HPC: scavenge has no preemption and a 1 day limit; skip the 8-11 GB desktop / 1080 Ti GPUs
     "itu": ["--partition=scavenge", "--cpus-per-task=4", "--mem=48G", "--mail-type=NONE",
-            "--exclude=desktop[1-15],cn16,cn17"],
+            "--exclude=desktop[1,6-8,12,15],cn16,cn17"],
 }
 
 
