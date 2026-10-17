@@ -2,8 +2,9 @@
 
 Standard library only, so it can run on the cluster front node without a virtualenv:
 
-    python3 scripts/sweep.py topologies            # print the sbatch command
-    python3 scripts/sweep.py topologies --submit   # submit it
+    python3 scripts/sweep.py topologies                        # print the sbatch command
+    python3 scripts/sweep.py topologies --submit               # submit it (REAL HPC)
+    python3 scripts/sweep.py topologies --cluster itu --tasks 7-13 --submit   # part of it on ITU HPC
 
 Each run trains all seeds of one (config, overrides) combination on one GPU.
 """
@@ -54,11 +55,22 @@ def expand(sweep):
     return runs
 
 
+# extra sbatch options per cluster (command-line options override the #SBATCH lines in job.sh)
+CLUSTERS = {
+    "real": [],
+    # ITU HPC: scavenge has no preemption and a 1 day limit; skip the 8-11 GB desktop / 1080 Ti GPUs
+    "itu": ["--partition=scavenge", "--cpus-per-task=4", "--mem=48G", "--mail-type=NONE",
+            "--exclude=desktop[1-15],cn16,cn17"],
+}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("sweep", choices=sorted(SWEEPS))
     parser.add_argument("--results", default=os.path.expanduser("~/SAPIENS_jax/results"))
     parser.add_argument("--max_parallel", type=int, default=6, help="GPUs used at once (fair to other users)")
+    parser.add_argument("--cluster", choices=sorted(CLUSTERS), default="real")
+    parser.add_argument("--tasks", help="subset of run indices, e.g. 0-6 or 1,4,9 (default: all)")
     parser.add_argument("--submit", action="store_true")
     args = parser.parse_args()
 
@@ -70,8 +82,10 @@ def main():
         f.writelines(f"{name} {a}\n" for name, a, _ in runs)
 
     hours = max(h for _, _, h in runs)
-    cmd = ["sbatch", f"--array=0-{len(runs) - 1}%{args.max_parallel}", f"--job-name=sapiens-{args.sweep}",
-           f"--time={hours}:00:00", f"--output={out}/logs/%A_%a.log", "scripts/job.sh", runs_file]
+    tasks = args.tasks or f"0-{len(runs) - 1}"
+    cmd = ["sbatch", f"--array={tasks}%{args.max_parallel}", f"--job-name=sapiens-{args.sweep}",
+           f"--time={hours}:00:00", f"--output={out}/logs/%A_%a.log", *CLUSTERS[args.cluster],
+           "scripts/job.sh", runs_file]
     print(f"{len(runs)} runs written to {runs_file}")
     print(" ".join(cmd))
     if args.submit:
