@@ -21,6 +21,10 @@ TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
 SWEEPS = {
     "smoke": [("merging_paths", {"TOPOLOGY": ["fully", "dynamic"], "TOTAL_STEPS": [200_000]}, 4, 1)],
     "pilot": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
+    # shared DQN hyper-parameters, tuned without sharing on the task without local optima so that
+    # the choice cannot favour any topology; then frozen for every topology and task
+    "tune": [("single_path", {"TOPOLOGY": ["independent"], "LR": [1e-4, 1e-3], "GAMMA": [0.9, 0.99],
+                              "EPS_FRACTION": [0.1, 0.5], "TARGET_UPDATE_INTERVAL": [1_000, 10_000]}, 10, 2)],
     "pilot_vtrace": [(c, {"TOPOLOGY": TOPOLOGIES, "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [16],
                           "LR": [1e-3], "LOG_INTERVAL": [10_240]}, 20, 6) for c in ["merging_paths", "deepsea"]],
     "craftax_bench": [("craftax_classic", {"TOPOLOGY": ["dynamic"], "TOTAL_STEPS": [4_194_304]}, 1, 2),
