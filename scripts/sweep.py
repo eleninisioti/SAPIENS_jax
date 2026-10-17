@@ -20,6 +20,7 @@ TRADITIONAL = ["deepsea", "mountaincar", "minatar_breakout", "minatar_freeway",
 # name -> list of (config, grid of overrides, number of seeds, hours)
 SWEEPS = {
     "smoke": [("merging_paths", {"TOPOLOGY": ["fully", "dynamic"], "TOTAL_STEPS": [200_000]}, 4, 1)],
+    "pilot2": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
     "pilot": [(c, {"TOPOLOGY": TOPOLOGIES}, 20, 4) for c in ["merging_paths", "deepsea"]],
     # shared DQN hyper-parameters, tuned without sharing on the task without local optima so that
     # the choice cannot favour any topology; then frozen for every topology and task

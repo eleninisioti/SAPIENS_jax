@@ -32,17 +32,18 @@ DEFAULTS = dict(
     NUM_ENVS=1,                # parallel environments per agent
     TOTAL_STEPS=2_000_000,     # environment steps per agent, summed over its environments
     HIDDEN=[64, 64],
-    LR=1e-4,
-    GAMMA=0.99,
+    # LR, GAMMA, EPS_FRACTION, TARGET_UPDATE_INTERVAL: tuned without sharing on the single-path task
+    LR=1e-3,
+    GAMMA=0.9,
     # DQN
     BUFFER_SIZE=25_000,        # per agent, the same for every topology
     BATCH_SIZE=256,
     EPS_START=1.0,
     EPS_END=0.05,
-    EPS_FRACTION=0.2,          # fraction of TOTAL_STEPS over which epsilon decays linearly
+    EPS_FRACTION=0.1,          # fraction of TOTAL_STEPS over which epsilon decays linearly
     LEARNING_STARTS=10_000,
     TRAIN_INTERVAL=4,          # steps per gradient update
-    TARGET_UPDATE_INTERVAL=10_000,
+    TARGET_UPDATE_INTERVAL=1_000,
     # V-trace actor-critic
     ROLLOUT_LEN=32,
     VF_COEF=0.5,
