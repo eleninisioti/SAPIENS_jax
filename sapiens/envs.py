@@ -13,7 +13,7 @@ class Env:
     so that different seeds can be vmapped over different tasks.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, kwargs=None):
         self.name = name
         self.is_alchemy = name in alchemy_envs.REGISTRY
         self.is_craftax = name.startswith("Craftax")
@@ -33,7 +33,7 @@ class Env:
                 from craftax.craftax.constants import Achievement
             self.achievement_names = [a.name.lower() for a in sorted(Achievement, key=lambda a: a.value)]
         else:
-            self.env, self.default_params = gymnax.make(name)
+            self.env, self.default_params = gymnax.make(name, **(kwargs or {}))
             self.max_steps = int(self.default_params.max_steps_in_episode)
         self.num_actions = self.env.action_space(self.default_params).n
         self.num_achievements = len(self.achievement_names)

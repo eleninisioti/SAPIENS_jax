@@ -13,7 +13,7 @@ SMALL = ["TOTAL_STEPS=4000", "LOG_INTERVAL=1000", "LEARNING_STARTS=500", "BUFFER
 
 def _run(overrides, seeds=2, small=SMALL):
     cfg = load_config(None, small + overrides)
-    env = Env(cfg["ENV_NAME"])
+    env = Env(cfg["ENV_NAME"], cfg["ENV_KWARGS"])
     if cfg["ALGO"] == "dqn":
         make = lambda: LEARNERS["dqn"].make_train(cfg, env, return_buffers=True)
     else:

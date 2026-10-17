@@ -1,4 +1,7 @@
-# bsuite DeepSea: moving right costs a little, the treasure is only reached by always moving right
+# bsuite DeepSea: moving right costs a little, the treasure is only reached by always moving right.
+# The default size 8 is solved by every topology; larger grids need sustained exploration.
 ENV_NAME: DeepSea-bsuite
+ENV_KWARGS: {size: 16}
+EVAL_STEPS: 16
 TOTAL_STEPS: 1_000_000
 SUCCESS_THRESHOLD: 0.9
