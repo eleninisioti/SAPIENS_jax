@@ -1,0 +1,7 @@
+# MATH (level 3-5 train, MATH-500 test) with Qwen2.5-1.5B-Instruct LoRA learners
+MODEL: Qwen/Qwen2.5-1.5B-Instruct
+NUM_LEARNERS: 4
+ITERATIONS: 100
+PROMPTS_PER_ITER: 16
+GROUP_SIZE: 8
+MAX_TOKENS: 1024

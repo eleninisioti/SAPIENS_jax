@@ -1,0 +1,28 @@
+[project]
+name = "sapiens-llm"
+version = "0.1.0"
+description = "SAPIENS for LLM fine-tuning: a population of GRPO learners sharing completions over a social network"
+requires-python = ">=3.11,<3.13"
+# versions as in the finetuning_es project, known to work together on the REAL cluster
+dependencies = [
+    "torch==2.10.0",
+    "vllm==0.17.0; sys_platform == 'linux'",
+    "transformers==4.57.1",
+    "peft>=0.17",
+    "math-verify==0.9.0",
+    "pandas",
+    "pyarrow",
+    "numpy",
+    "pyyaml",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
