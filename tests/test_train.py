@@ -128,3 +128,27 @@ def test_navix_and_kheperax_run(env_name, extra):
     assert onp.isfinite(metrics["loss"]).all()
     assert metrics["received"].sum() > 0
     assert (metrics["eval_length"] > 0).all()
+
+
+def test_deceptive_coins_paths():
+    env = Env("DeceptiveCoins-v0")
+    p = env.default_params
+    step = jax.jit(lambda s, a: env.step(jax.random.PRNGKey(0), s, a, p))
+
+    def play(actions):
+        _, s = env.reset(jax.random.PRNGKey(0), p)
+        total, done = 0.0, False
+        for a in actions:
+            _, s, r, d = step(s, a)
+            total += float(r)
+            done = bool(d)
+            if done:
+                break
+        return total, done
+
+    up, down, left, right = 0, 1, 2, 3
+    assert play([left] * 6) == (2.0, True)                                 # the deceptive path
+    optimal = [right] * 3 + [up, up, right, right] + [down] * 4 + [up, up, right]
+    assert play(optimal) == (5.0, True)                                     # the better path
+    # the barrier: after committing right the agent cannot reach the left diamond
+    assert play([right, left, left, left]) == (0.0, False)

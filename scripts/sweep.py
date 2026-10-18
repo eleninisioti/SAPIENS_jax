@@ -46,6 +46,8 @@ SWEEPS = {
                                     "EPS_END": [0.05, 0.2], "GAMMA": [0.99, 0.995]}, 10, 4, 1000),
                       ("kheperax", {"TOPOLOGY": ["independent"], "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [32],
                                     "LOG_INTERVAL": [51_200], "LR": [3e-4, 1e-3], "ENT_COEF": [0.01, 0.05]}, 10, 4, 1000)],
+    "tune_navix": [("navix_doorkey8_vtrace", {"TOPOLOGY": ["independent"], "LR": [1e-4, 3e-4, 7e-4],
+                                              "ENT_COEF": [0.01, 0.03], "TOTAL_STEPS": [40_304_640]}, 10, 6, 1000)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
     "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [
