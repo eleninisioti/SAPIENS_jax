@@ -65,6 +65,7 @@ SWEEPS = {
                                             "EPS_END": [0.05, 0.2]}, 10, 4, 1000),
                           ("kheperax_pos", {"TOPOLOGY": ["independent"], "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [32],
                                             "LOG_INTERVAL": [51_200], "LR": [3e-4, 1e-3], "ENT_COEF": [0.01, 0.05]}, 10, 4, 1000)],
+    "kheperax_main": [("kheperax_pos", {"TOPOLOGY": TOPOLOGIES, "TOTAL_STEPS": [10_000_000]}, 20, 6)],
     "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     # sharing on a fixed clock: at episode ends, agents on the short deceptive path share ~5x more often
     "coins_fixed_share": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES, "SHARE_INTERVAL": [16]}, 20, 2)],

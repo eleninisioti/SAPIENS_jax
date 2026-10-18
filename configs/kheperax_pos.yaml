@@ -14,3 +14,8 @@ LR: 5.0e-4
 SHARE_INTERVAL: 16
 LOG_INTERVAL: 50_000
 SUCCESS_METRIC: goal
+# single-learner tuning (sweep tune_kheperax_pos, held-out seeds): every setting parks at the dead end
+# (about 1% of agents ever reach the goal); best final return: DQN with these settings
+LR: 2.5e-4
+EPS_FRACTION: 0.1
+EPS_END: 0.05
