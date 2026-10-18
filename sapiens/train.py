@@ -66,8 +66,8 @@ DEFAULTS = dict(
     T_LOW=1_600,
     T_HIGH=160,                # periodic: connected phase; adaptive_discovery: broadcast window
     ADAPT_INTERVAL=1_000,      # adaptive topologies: steps between decisions
-    D_LOW=0.15,                # adaptive_diversity: isolate once trajectory diversity is at most this
-    D_HIGH=0.55,               # adaptive_diversity: connect once it is above this
+    D_LOW=0.05,                # adaptive_diversity: isolate once outcome diversity is at most this (tuned)
+    D_HIGH=0.35,               # adaptive_diversity: connect once it is above this (tuned)
     DISCOVERY_MARGIN=0.0,      # adaptive_discovery: improvement over the group's best greedy return that counts
     # logging and evaluation
     LOG_INTERVAL=10_000,

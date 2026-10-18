@@ -41,6 +41,11 @@ SWEEPS = {
                      ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
     "navix_vtrace": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES}, 5, 8)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
+    # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
+    "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [
+        {"TOPOLOGY": ["adaptive_diversity"]},
+        {"TOPOLOGY": ["adaptive_discovery"], "T_HIGH": [1600]},
+    ]],
     "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],
                                   "TOPOLOGY": ["independent", "fully", "ring", "periodic", "centralized"]}, 20, 4)],
