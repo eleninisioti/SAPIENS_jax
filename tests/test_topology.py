@@ -21,7 +21,7 @@ def test_initial_graphs_are_symmetric_without_self_loops(topo, n):
 
 def test_expected_degrees():
     assert topology.initial_adjacency(cfg(TOPOLOGY="fully", NUM_AGENTS=10), 0).sum(1).tolist() == [9] * 10
-    assert topology.initial_adjacency(cfg(TOPOLOGY="ring", NUM_AGENTS=10), 0).sum(1).tolist() == [2] * 10
+    assert topology.initial_adjacency(cfg(TOPOLOGY="ring", NUM_AGENTS=10, RING_K=2), 0).sum(1).tolist() == [2] * 10
     assert topology.initial_adjacency(cfg(TOPOLOGY="dynamic", NUM_AGENTS=10), 0).sum(1).tolist() == [1] * 10
     assert topology.initial_adjacency(cfg(TOPOLOGY="independent", NUM_AGENTS=10), 0).sum() == 0
 
