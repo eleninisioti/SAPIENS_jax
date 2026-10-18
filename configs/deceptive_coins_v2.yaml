@@ -1,0 +1,9 @@
+# Deceptive Coins v2: easy path worth 2 next to the start, better path worth 5 whose first reward is
+# 9 steps away; time left is part of the observation. GAMMA is fixed at 0.99: with 0.9 the easy path
+# would be optimal for the discounted objective (0.82 against 1.66).
+ENV_NAME: DeceptiveCoins-v2
+HIDDEN: [64, 64]
+GAMMA: 0.99
+TOTAL_STEPS: 2_000_000
+LOG_INTERVAL: 20_000
+SHARE_INTERVAL: 16

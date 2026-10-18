@@ -1,0 +1,13 @@
+# Kheperax deceptive maze as a fully observed RL task: lasers and bumpers plus the robot's position and
+# the time left. Reward is minus the distance to the target; the direct route ends in a dead end.
+ENV_NAME: Kheperax-standard
+ENV_KWARGS: {position: true}
+TIME_OBS: true
+HIDDEN: [128, 128]
+TOTAL_STEPS: 5_000_000
+NUM_ENVS: 8
+GAMMA: 0.99
+LR: 5.0e-4
+SHARE_INTERVAL: 16
+LOG_INTERVAL: 50_000
+SUCCESS_METRIC: goal

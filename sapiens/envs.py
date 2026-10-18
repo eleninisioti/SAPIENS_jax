@@ -68,6 +68,8 @@ class Env:
             from kheperax.tasks.target import TargetKheperaxConfig, TargetKheperaxTask
             config = TargetKheperaxConfig.get_default_for_map(name.split("-", 1)[1])
             self.env = TargetKheperaxTask(config)
+            # position: add the robot's (x, y) to its laser and bumper readings
+            self.kheperax_position = bool((kwargs or {}).get("position", False))
             self.default_params = None
             self.max_steps = int(config.episode_length)
             self.num_actions = len(KHEPERAX_ACTIONS)
@@ -127,7 +129,7 @@ class Env:
         if self.kind == "kheperax":
             ks = self.env.reset(key)
             ks = ks.replace(reward=jnp.float32(ks.reward), done=jnp.asarray(ks.done))
-            return ks.obs, (ks, jnp.int32(0))
+            return self._kheperax_obs(ks), (ks, jnp.int32(0))
         return self.env.reset(key, params)
 
     def reset(self, key, params):
@@ -156,13 +158,18 @@ class Env:
             ks = self.env.step(ks, KHEPERAX_ACTIONS[action])
             ks = ks.replace(reward=jnp.float32(ks.reward), done=jnp.asarray(ks.done))
             done = ks.done | (t + 1 >= self.max_steps)
-            ts, obs, reward = (ks, t + 1), ks.obs, ks.reward
+            ts, obs, reward = (ks, t + 1), self._kheperax_obs(ks), ks.reward
         else:
             obs, state, reward, done, _ = self.env.step(key, state, action, params)
             return obs.reshape(-1).astype(jnp.float32), state, reward.astype(jnp.float32), done
         reset_raw, reset_state = self._raw_reset(key, params)
         obs = jnp.where(done, reset_raw.reshape(-1).astype(jnp.float32), obs.reshape(-1).astype(jnp.float32))
         return obs, _select(done, reset_state, ts), jnp.float32(reward), done
+
+    def _kheperax_obs(self, ks):
+        if self.kheperax_position:
+            return jnp.concatenate([ks.obs, jnp.array([ks.robot.posture.x, ks.robot.posture.y])])
+        return ks.obs
 
     def achievements(self, state):
         if self.time_obs:

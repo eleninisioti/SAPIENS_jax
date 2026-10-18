@@ -179,3 +179,22 @@ def test_time_obs(env_name):
     _, metrics, _ = _run([f"ENV_NAME={env_name}", "TIME_OBS=True", "TOPOLOGY=fully", "SHARE_INTERVAL=16"]
                          + (["NETWORK=cnn", "HIDDEN=[16]"] if len(env.obs_shape) == 3 else []), seeds=1)
     assert onp.isfinite(metrics["loss"]).all()
+
+
+def test_deceptive_coins_v2_optimal_path():
+    env = Env("DeceptiveCoins-v2")
+    p = env.default_params
+    _, s = env.reset(jax.random.PRNGKey(0), p)
+    up, down, left, right = 0, 1, 2, 3
+    total, d = 0.0, False
+    for a in [right] * 9 + [up] * 4 + [right] * 3 + [down] * 8 + [up] * 4 + [right] * 3:
+        _, s, r, d = env.step(jax.random.PRNGKey(0), s, a, p)
+        total += float(r)
+    assert total == 5.0 and bool(d)
+
+
+def test_kheperax_position():
+    env = Env("Kheperax-standard", {"position": True}, time_obs=True)
+    obs, _ = env.reset(jax.random.PRNGKey(0), None)
+    assert obs.shape == (5 + 2 + 1,)
+    assert abs(float(obs[5]) - 0.15) < 1e-6 and abs(float(obs[6]) - 0.15) < 1e-6

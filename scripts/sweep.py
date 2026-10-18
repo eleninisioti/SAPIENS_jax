@@ -59,6 +59,12 @@ SWEEPS = {
                                            "SHARE_INTERVAL": [16]}, 20, 2)],
     # robustness of the main merging result to an observable time limit
     "merging_time": [("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7], "TIME_OBS": [True]}, 20, 4)],
+    "tune_coins_v2": [("deceptive_coins_v2", {"TOPOLOGY": ["independent"], "LR": [1e-4, 1e-3], "EPS_FRACTION": [0.1, 0.5],
+                                              "EPS_END": [0.05, 0.1]}, 10, 3, 1000)],
+    "tune_kheperax_pos": [("kheperax_pos", {"TOPOLOGY": ["independent"], "LR": [2.5e-4, 1e-3], "EPS_FRACTION": [0.1, 0.5],
+                                            "EPS_END": [0.05, 0.2]}, 10, 4, 1000),
+                          ("kheperax_pos", {"TOPOLOGY": ["independent"], "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [32],
+                                            "LOG_INTERVAL": [51_200], "LR": [3e-4, 1e-3], "ENT_COEF": [0.01, 0.05]}, 10, 4, 1000)],
     "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     # sharing on a fixed clock: at episode ends, agents on the short deceptive path share ~5x more often
     "coins_fixed_share": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES, "SHARE_INTERVAL": [16]}, 20, 2)],

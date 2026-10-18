@@ -6,8 +6,8 @@ fire: return 5, but only for an agent that leaves the easy reward behind. Once t
 one side a barrier closes behind it, so each episode commits to one path. Touching a fire or
 running out of time ends the episode.
 
-Two layouts: v0 is the small level of the 2022 paper; v1 puts the right-hand rewards further away
-on a larger grid, so the easy path is relatively more tempting.
+Layouts: v0 is the small level of the 2022 paper; v1 and v2 put the right-hand rewards further away
+on larger grids, so the easy path is relatively more tempting.
 
 Observation: (H, W, 4) planes for the agent, the remaining diamonds, the fires, and the fraction of
 the time limit left. Time is observable so that running out of time is not mistaken for a dead end
@@ -26,6 +26,10 @@ LAYOUTS = {
                right_diamonds=((2, 9), (0, 11), (4, 11)), right_fire=(2, 12), max_steps=20),
     "v1": dict(height=7, width=21, start=(3, 10), left_diamonds=((3, 9),), left_fire=(3, 6),
                right_diamonds=((3, 15), (0, 18), (6, 18)), right_fire=(3, 20), max_steps=30),
+    # v2: the first right-hand reward 9 steps from the start (the better path stays optimal under
+    # discount 0.99: 4.07 against 1.96 for the easy path)
+    "v2": dict(height=9, width=31, start=(4, 15), left_diamonds=((4, 14),), left_fire=(4, 10),
+               right_diamonds=((4, 24), (0, 27), (8, 27)), right_fire=(4, 30), max_steps=45),
 }
 LEFT_FIRE_REWARD, RIGHT_FIRE_REWARD = 1.0, 2.0
 MOVES = jnp.array([[-1, 0], [1, 0], [0, -1], [0, 1]])  # up, down, left, right
