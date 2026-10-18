@@ -57,6 +57,8 @@ SWEEPS = {
                                              "SHARE_SOURCE": ["recent", "buffer"]}, 20, 2)],
     "coins_time": [("deceptive_coins_v1", {"TOPOLOGY": ["independent", "centralized", "fully", "periodic", "dynamic"],
                                            "SHARE_INTERVAL": [16]}, 20, 2)],
+    # robustness of the main merging result to an observable time limit
+    "merging_time": [("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7], "TIME_OBS": [True]}, 20, 4)],
     "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     # sharing on a fixed clock: at episode ends, agents on the short deceptive path share ~5x more often
     "coins_fixed_share": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES, "SHARE_INTERVAL": [16]}, 20, 2)],

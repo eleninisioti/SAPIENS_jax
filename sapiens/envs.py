@@ -44,8 +44,11 @@ class Env:
     so that different seeds can be vmapped over different tasks.
     """
 
-    def __init__(self, name: str, kwargs=None):
+    def __init__(self, name: str, kwargs=None, time_obs=False):
+        """time_obs: append the fraction of the time limit left to the observation (a scalar, or an
+        extra plane for image observations), so that a time-out is not mistaken for a dead end."""
         self.name = name
+        self.time_obs = False
         self.is_alchemy = name in alchemy_envs.REGISTRY
         self.is_craftax = name.startswith("Craftax")
         self.kind = "navix" if name.startswith("Navix") else "kheperax" if name.startswith("Kheperax") else "gymnax"
@@ -94,9 +97,23 @@ class Env:
             self.num_actions = self.env.action_space(self.default_params).n
         self.num_achievements = len(self.achievement_names)
         obs, _ = self._raw_reset(jax.random.PRNGKey(0), self.default_params)
-        self.obs_dim = int(obs.size)
-        self.obs_shape = tuple(obs.shape)
+        self.raw_shape = tuple(obs.shape)
+        self.time_obs = time_obs
+        if not time_obs:
+            self.obs_shape = self.raw_shape
+        elif len(self.raw_shape) == 3:
+            self.obs_shape = self.raw_shape[:-1] + (self.raw_shape[-1] + 1,)
+        else:
+            self.obs_shape = (int(obs.size) + 1,)
+        self.obs_dim = int(jnp.prod(jnp.array(self.obs_shape)))
         self.optimal_return = getattr(self.env, "optimal_return", None)
+
+    def _with_time(self, flat, t):
+        left = 1.0 - t / self.max_steps
+        if len(self.raw_shape) == 3:
+            plane = jnp.full(self.raw_shape[:-1] + (1,), left, jnp.float32)
+            return jnp.concatenate([flat.reshape(self.raw_shape), plane], -1).reshape(-1)
+        return jnp.concatenate([flat, jnp.array([left], jnp.float32)])
 
     def params(self, task_key):
         if self.is_alchemy:
@@ -115,10 +132,21 @@ class Env:
 
     def reset(self, key, params):
         obs, state = self._raw_reset(key, params)
-        return obs.reshape(-1).astype(jnp.float32), state
+        obs = obs.reshape(-1).astype(jnp.float32)
+        if self.time_obs:
+            return self._with_time(obs, 0), (state, jnp.int32(0))
+        return obs, state
 
     def step(self, key, state, action, params):
         """Steps and auto-resets: after a terminal step the returned obs/state are a fresh episode."""
+        if self.time_obs:
+            inner, t = state
+            obs, inner, reward, done = self._step(key, inner, action, params)
+            t = jnp.where(done, 0, t + 1).astype(jnp.int32)
+            return self._with_time(obs, t), (inner, t), reward, done
+        return self._step(key, state, action, params)
+
+    def _step(self, key, state, action, params):
         if self.kind == "navix":
             ts = self.env.step(state, action)
             done = ts.step_type > 0
@@ -132,11 +160,13 @@ class Env:
         else:
             obs, state, reward, done, _ = self.env.step(key, state, action, params)
             return obs.reshape(-1).astype(jnp.float32), state, reward.astype(jnp.float32), done
-        reset_obs, reset_state = self.reset(key, params)
-        obs = jnp.where(done, reset_obs, obs.reshape(-1).astype(jnp.float32))
+        reset_raw, reset_state = self._raw_reset(key, params)
+        obs = jnp.where(done, reset_raw.reshape(-1).astype(jnp.float32), obs.reshape(-1).astype(jnp.float32))
         return obs, _select(done, reset_state, ts), jnp.float32(reward), done
 
     def achievements(self, state):
+        if self.time_obs:
+            state = state[0]
         if self.is_craftax:
             return state.achievements.astype(bool)
         return jnp.zeros((0,), bool)

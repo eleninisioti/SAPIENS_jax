@@ -26,6 +26,7 @@ LEARNERS = {"dqn": dqn, "vtrace": vtrace}
 DEFAULTS = dict(
     ENV_NAME="Merging-paths-alchemy",
     ENV_KWARGS={},             # passed to gymnax.make, e.g. {size: 20} for DeepSea
+    TIME_OBS=False,            # append the fraction of the time limit left to observations
     ALGO="dqn",                # dqn | vtrace
     TOPOLOGY="fully",          # independent | fully | ring | small_world | dynamic | periodic | centralized
     NUM_AGENTS=10,
@@ -85,7 +86,7 @@ DEFAULTS = dict(
 
 
 def run(cfg, num_seeds, seed_offset=0):
-    env = Env(cfg["ENV_NAME"], cfg["ENV_KWARGS"])
+    env = Env(cfg["ENV_NAME"], cfg["ENV_KWARGS"], cfg["TIME_OBS"])
     seeds = onp.arange(seed_offset, seed_offset + num_seeds)
     rngs = jnp.stack([jax.random.PRNGKey(int(s)) for s in seeds])
     # the task instance (e.g. recipe book) differs across seeds but is shared by the agents of a seed

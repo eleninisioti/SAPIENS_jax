@@ -13,7 +13,7 @@ SMALL = ["TOTAL_STEPS=4000", "LOG_INTERVAL=1000", "LEARNING_STARTS=500", "BUFFER
 
 def _run(overrides, seeds=2, small=SMALL):
     cfg = load_config(None, small + overrides)
-    env = Env(cfg["ENV_NAME"], cfg["ENV_KWARGS"])
+    env = Env(cfg["ENV_NAME"], cfg["ENV_KWARGS"], cfg["TIME_OBS"])
     if cfg["ALGO"] == "dqn":
         make = lambda: LEARNERS["dqn"].make_train(cfg, env, return_buffers=True)
     else:
@@ -164,3 +164,18 @@ def test_deceptive_coins_v1_optimal_path():
         _, s, r, d = env.step(jax.random.PRNGKey(0), s, a, p)
         total += float(r)
     assert total == 5.0 and bool(d)
+
+
+@pytest.mark.parametrize("env_name", ["Merging-paths-alchemy", "Breakout-MinAtar", "Navix-DoorKey-5x5-v0"])
+def test_time_obs(env_name):
+    env = Env(env_name, None, time_obs=True)
+    p = env.params(jax.random.PRNGKey(0))
+    obs, s = env.reset(jax.random.PRNGKey(0), p)
+    assert obs.shape == (env.obs_dim,)
+    time_left = lambda o: float(o.reshape(env.obs_shape)[..., -1].reshape(-1)[0]) if len(env.obs_shape) == 3 else float(o[-1])
+    assert time_left(obs) == 1.0
+    obs, s, _, d = env.step(jax.random.PRNGKey(1), s, 0, p)
+    assert bool(d) or abs(time_left(obs) - (1 - 1 / env.max_steps)) < 1e-6
+    _, metrics, _ = _run([f"ENV_NAME={env_name}", "TIME_OBS=True", "TOPOLOGY=fully", "SHARE_INTERVAL=16"]
+                         + (["NETWORK=cnn", "HIDDEN=[16]"] if len(env.obs_shape) == 3 else []), seeds=1)
+    assert onp.isfinite(metrics["loss"]).all()
