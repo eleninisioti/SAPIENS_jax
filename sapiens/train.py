@@ -103,6 +103,8 @@ def success(cfg, metrics, env):
 
 def parse_value(v):
     # YAML reads "1e-3" as a string, so try numbers first
+    if v in ("None", "none"):
+        return None
     for cast in (int, float):
         try:
             return cast(v)

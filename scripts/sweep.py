@@ -39,6 +39,7 @@ SWEEPS = {
     # main alchemy comparison with the frozen topology parameters, on the reported seeds 0-19
     "alchemy_main": [("bestoften_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 12),
                      ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
+    "navix_vtrace": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES}, 5, 8)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],

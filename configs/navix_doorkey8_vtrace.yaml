@@ -1,0 +1,20 @@
+# MiniGrid DoorKey 8x8 (NAVIX) with V-trace actor-critic agents, the standard learner for MiniGrid
+ENV_NAME: Navix-DoorKey-8x8-v0
+ALGO: vtrace
+NUM_ENVS: 16
+ROLLOUT_LEN: 32
+LR: 7.0e-4
+GAMMA: 0.99
+HIDDEN: [64, 64]
+TOTAL_STEPS: 16_121_856
+LOG_INTERVAL: 503_808
+SHARE_BATCH: 2
+EVAL_GREEDY: false
+EVAL_EPISODES: 8
+SUCCESS_METRIC: goal
+# topology timescales: the merging-paths values scaled by ~6, the ratio of the steps needed to solve each task
+P_VISIT: 1.7e-4
+VISIT_DURATION: 960
+T_LOW: 9_600
+T_HIGH: 960
+ADAPT_INTERVAL: 6_000
