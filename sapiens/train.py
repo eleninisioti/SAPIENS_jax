@@ -56,13 +56,13 @@ DEFAULTS = dict(
     SHARE_INTERVAL=0,          # DQN only. 0: share at the end of each episode (as in the paper); k > 0: every k steps
     P_SHARE=1.0,               # probability that a sharing opportunity is used (V-trace: once per update)
     SHARE_BATCH=16,            # sent to each neighbour per sharing event: transitions (DQN) or trajectories (V-trace)
-    # topology parameters
-    RING_K=2,
+    # topology parameters, tuned per topology on merging paths with held-out seeds (sweep topo_params)
+    RING_K=6,
     SW_K=4,
-    SW_BETA=0.2,
+    SW_BETA=0.05,
     GROUP_SIZE=2,
-    P_VISIT=0.01,              # per step
-    VISIT_DURATION=360,        # steps
+    P_VISIT=0.001,             # per step
+    VISIT_DURATION=160,        # steps
     T_LOW=1_600,
     T_HIGH=160,                # periodic: connected phase; adaptive_discovery: broadcast window
     ADAPT_INTERVAL=1_000,      # adaptive topologies: steps between decisions

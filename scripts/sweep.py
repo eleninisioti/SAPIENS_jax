@@ -32,6 +32,13 @@ SWEEPS = {
     # first pass on the standard benchmarks (5 seeds): does DQN learn, and do topologies differ?
     "newenvs": [(c, {"TOPOLOGY": TOPOLOGIES}, 5, 6)
                 for c in ["minatar_freeway", "minatar_breakout", "navix_doorkey8", "kheperax"]],
+    "adaptive_params": [("merging_paths", grid, 10, 4, 1000) for grid in [
+        {"TOPOLOGY": ["adaptive_discovery"], "T_HIGH": [16, 160, 1600]},
+        {"TOPOLOGY": ["adaptive_diversity"], "D_LOW": [0.02, 0.05, 0.1], "D_HIGH": [0.1, 0.2, 0.3]},
+    ]],
+    # main alchemy comparison with the frozen topology parameters, on the reported seeds 0-19
+    "alchemy_main": [("bestoften_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 12),
+                     ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
     "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],
                                   "TOPOLOGY": ["independent", "fully", "ring", "periodic", "centralized"]}, 20, 4)],
