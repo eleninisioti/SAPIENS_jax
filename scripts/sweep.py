@@ -51,6 +51,8 @@ SWEEPS = {
     "tune_coins": [(c, {"TOPOLOGY": ["independent"], "LR": [1e-4, 1e-3], "GAMMA": [0.9, 0.99],
                         "EPS_FRACTION": [0.1, 0.5]}, 10, 3, 1000) for c in ["deceptive_coins", "deceptive_coins_v1"]],
     "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
+    # sharing on a fixed clock: at episode ends, agents on the short deceptive path share ~5x more often
+    "coins_fixed_share": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES, "SHARE_INTERVAL": [16]}, 20, 2)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
     "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [
