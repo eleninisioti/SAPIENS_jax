@@ -93,9 +93,12 @@ def make_evaluate(env, act, eval_steps, episodes):
     """Rolls out every agent's policy from the same start states and action keys.
 
     act(params, obs, key) -> action. Returns per agent: mean return, a hash of the first
-    episode's action sequence (for conformity / volatility), achievement rates and mean episode
-    length (episodes still running at the end count as eval_steps).
+    episode's outcome (its last observation and action, which determine the final state in
+    deterministic tasks; used for conformity / volatility as in the paper: agents conform when they
+    end with the same element), achievement rates and mean episode length (episodes still running
+    at the end count as eval_steps).
     """
+    w_obs, w_act = hash_weights(jax.random.PRNGKey(0), env.obs_dim)
 
     def rollout(p, key, env_params):
         k_reset, key = jax.random.split(key)
@@ -105,8 +108,8 @@ def make_evaluate(env, act, eval_steps, episodes):
             obs, es, alive, ret, h, ach, length, key = c
             key, k_act, k_step = jax.random.split(key, 3)
             a = act(p, obs, k_act)
+            h = jnp.where(alive, hash_transitions(obs, a, w_obs, w_act), h)
             obs, es, r, d = env.step(k_step, es, a, env_params)
-            h = jnp.where(alive, h * jnp.uint32(1_000_003) + a.astype(jnp.uint32) + 1, h)
             ach = ach | (env.achievements(es) & alive & ~d)
             return (obs, es, alive & ~d, ret + r * alive, h, ach, length + alive, key), None
 
