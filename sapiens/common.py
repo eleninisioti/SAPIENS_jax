@@ -124,3 +124,11 @@ def make_evaluate(env, act, eval_steps, episodes):
         return ret.mean(0), h[0], ach.mean(0), length.mean(0)
 
     return evaluate
+
+
+def report_progress(metrics, total_steps):
+    """One line per log interval (from inside the jitted loop), so long runs can be monitored."""
+    def show(step, ret):
+        print(f"step {int(step):>11,}/{total_steps:,}  eval return mean {float(ret.mean()):9.3f}  best {float(ret.max(-1).mean()):9.3f}",
+              flush=True)
+    jax.debug.callback(show, metrics["step"], metrics["eval_return"], ordered=False)

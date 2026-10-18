@@ -14,7 +14,7 @@ import optax
 from sapiens import buffer as rb
 from sapiens import topology
 from sapiens.common import (MLP, conv_shape, count_unique, disagreement, hash_transitions, hash_weights, init_params,
-                            make_evaluate, pooled_grads)
+                            make_evaluate, pooled_grads, report_progress)
 
 
 def steps_per_update(cfg):
@@ -166,6 +166,7 @@ def make_train(cfg, env, return_buffers=False):
                 group=s["topo"].group,
             )
             s = dict(s, rng=rng, ret_sum=zeros, ret_count=zeros, loss_sum=zeros, loss_count=zeros, received=zeros)
+            report_progress(metrics, cfg["TOTAL_STEPS"])
             return s, metrics
 
         state, metrics = jax.lax.scan(log_step, state, jnp.arange(n_logs) * cfg["LOG_INTERVAL"])
