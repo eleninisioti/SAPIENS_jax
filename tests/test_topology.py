@@ -61,11 +61,11 @@ def _adaptive(topo, **kw):
 
 def test_adaptive_diversity_connects_when_diverse_and_isolates_when_converged():
     c, s = _adaptive("adaptive_diversity", D_LOW=0.1, D_HIGH=0.3)
-    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.5), returns=jnp.zeros(4))
+    s = topology.adapt(s, 0, c, diversity=jnp.array(0.5), returns=jnp.zeros(4))
     assert int(topology.step(s, jax.random.PRNGKey(0), 1, c).adj.sum()) == 12
-    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.2), returns=jnp.zeros(4))   # inside the band: stay
+    s = topology.adapt(s, 0, c, diversity=jnp.array(0.2), returns=jnp.zeros(4))   # inside the band: stay
     assert bool(s.connected)
-    s = topology.adapt(s, 0, c, disagreement=jnp.array(0.05), returns=jnp.zeros(4))
+    s = topology.adapt(s, 0, c, diversity=jnp.array(0.05), returns=jnp.zeros(4))
     assert int(topology.step(s, jax.random.PRNGKey(0), 1, c).adj.sum()) == 0
 
 

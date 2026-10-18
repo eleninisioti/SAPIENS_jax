@@ -11,12 +11,13 @@ Static structures (independent, fully, ring, small_world) never change. Two dyna
 
 Two adaptive structures decide when to connect from what the group does, instead of a schedule:
 
-* adaptive_diversity: a thermostat on behavioural diversity. Every ADAPT_INTERVAL steps the group
-            measures how much its agents disagree (fraction of agents not taking the majority
-            greedy action on shared probe states). Once disagreement falls below D_LOW the group
-            has converged and isolates; once it rises above D_HIGH it reconnects fully to share.
-* adaptive_discovery: agents are isolated until one of them beats the best training return the
-            group has seen (by more than DISCOVERY_MARGIN); the group then connects fully for
+Both roll out every agent's greedy policy every ADAPT_INTERVAL steps:
+
+* adaptive_diversity: a thermostat on behavioural diversity, the fraction of agents whose greedy
+            trajectory differs from the majority trajectory. Once diversity falls to D_LOW or below
+            the group has converged and isolates; once it rises above D_HIGH it reconnects fully.
+* adaptive_discovery: agents are isolated until one of them beats the best greedy return the
+            group has reached (by more than DISCOVERY_MARGIN); the group then connects fully for
             T_HIGH steps so the discovery spreads.
 
 `centralized` is the standard distributed-RL baseline: no experience sharing between learners
@@ -114,14 +115,14 @@ def step(state: TopoState, key: chex.PRNGKey, t, cfg, dt=1) -> TopoState:
     return state.replace(adj=_from_groups(group), group=group, visit_end=visit_end.astype(jnp.int32))
 
 
-def adapt(state: TopoState, t, cfg, disagreement, returns) -> TopoState:
+def adapt(state: TopoState, t, cfg, diversity, returns) -> TopoState:
     """Updates an adaptive structure every ADAPT_INTERVAL steps.
 
-    disagreement: scalar behavioural disagreement of the group; returns: (N,) mean training return
-    of each agent since the previous call (-inf for agents that finished no episode).
+    diversity: fraction of agents not following the group's majority greedy trajectory;
+    returns: (N,) greedy return of each agent.
     """
     if cfg["TOPOLOGY"] == "adaptive_diversity":
-        connected = jnp.where(state.connected, disagreement >= cfg["D_LOW"], disagreement > cfg["D_HIGH"])
+        connected = jnp.where(state.connected, diversity > cfg["D_LOW"], diversity > cfg["D_HIGH"])
         return state.replace(connected=connected)
     if cfg["TOPOLOGY"] == "adaptive_discovery":
         best_now = returns.max()

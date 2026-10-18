@@ -45,15 +45,18 @@ def make_train(cfg, env, return_buffers=False):
         values = jax.vmap(lambda p: network.apply(p, probe))(params)
         return disagreement(values)
 
-    def adapt(s, t):
-        returns = jnp.where(s["adapt_count"] > 0, s["adapt_sum"] / jnp.maximum(s["adapt_count"], 1), -jnp.inf)
-        topo = topology.adapt(s["topo"], t, cfg, group_disagreement(s["params"], s["obs"]), returns)
-        return dict(s, topo=topo, adapt_sum=jnp.zeros((n,)), adapt_count=jnp.zeros((n,)))
+    def adapt(s, t, env_params):
+        """Greedy rollouts of all agents: trajectory diversity and returns drive the adaptive topologies."""
+        rng, k = jax.random.split(s["rng"])
+        returns, traj_hash, _, _ = evaluate(s["params"], k, env_params)
+        majority = (traj_hash[:, None] == traj_hash[None, :]).sum(1).max()
+        diversity = 1.0 - majority / n  # fraction of agents not following the majority trajectory
+        return dict(s, topo=topology.adapt(s["topo"], t, cfg, diversity, returns), rng=rng)
 
-    def maybe_adapt(s, t):
+    def maybe_adapt(s, t, env_params):
         if cfg["TOPOLOGY"] not in topology.ADAPTIVE:
             return s
-        return jax.lax.cond(t % cfg["ADAPT_INTERVAL"] < update_steps, lambda s: adapt(s, t), lambda s: s, s)
+        return jax.lax.cond(t % cfg["ADAPT_INTERVAL"] < update_steps, lambda s: adapt(s, t, env_params), lambda s: s, s)
 
     vreset = jax.vmap(jax.vmap(env.reset, in_axes=(0, None)), in_axes=(0, None))
     vstep = jax.vmap(jax.vmap(env.step, in_axes=(0, 0, 0, None)), in_axes=(0, 0, 0, None))
@@ -71,7 +74,7 @@ def make_train(cfg, env, return_buffers=False):
             params=params, target=params, opt=jax.vmap(tx.init)(params), buf=buf,
             env_state=env_state, obs=obs, topo=topology.init_state(cfg, adj0),
             ep_return=jnp.zeros((n, n_envs)), ret_sum=zeros, ret_count=zeros, loss_sum=zeros,
-            loss_count=zeros, received=zeros, adapt_sum=zeros, adapt_count=zeros, rng=rng,
+            loss_count=zeros, received=zeros, rng=rng,
         )
 
         def env_step(s, t):
@@ -106,8 +109,6 @@ def make_train(cfg, env, return_buffers=False):
                 s, buf=buf, env_state=env_state, obs=next_obs, rng=rng, received=received,
                 ret_sum=s["ret_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
                 ret_count=s["ret_count"] + done.sum(-1),
-                adapt_sum=s["adapt_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
-                adapt_count=s["adapt_count"] + done.sum(-1),
                 ep_return=jnp.where(done, 0.0, ep_return),
                 topo=topology.step(s["topo"], k_topo, t + n_envs, cfg, dt=n_envs),
             )
@@ -139,7 +140,7 @@ def make_train(cfg, env, return_buffers=False):
                              lambda s: s, s)
             s = jax.lax.cond(t % cfg["TARGET_UPDATE_INTERVAL"] < update_steps,
                              lambda s: dict(s, target=s["params"]), lambda s: s, s)
-            return maybe_adapt(s, t), None
+            return maybe_adapt(s, t, env_params), None
 
         def log_step(s, t0):
             s, _ = jax.lax.scan(update_step, s, t0 + jnp.arange(updates_per_log) * update_steps)

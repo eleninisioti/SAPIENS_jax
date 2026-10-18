@@ -51,7 +51,7 @@ def disagreement(values, tolerance=0.01):
     majority = jax.nn.one_hot(greedy, values.shape[-1]).sum(0).argmax(-1)       # (states,)
     v_majority = jnp.take_along_axis(values, majority[None, :, None], -1)[..., 0]
     v_max, v_min = values.max(-1), values.min(-1)
-    return 1.0 - (v_majority >= v_max - tolerance * (v_max - v_min)).mean()
+    return (v_majority < v_max - tolerance * (v_max - v_min)).mean()
 
 
 def init_params(network, key, n, obs_dim, shared):
