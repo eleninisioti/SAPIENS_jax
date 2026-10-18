@@ -9,7 +9,9 @@ running out of time ends the episode.
 Two layouts: v0 is the small level of the 2022 paper; v1 puts the right-hand rewards further away
 on a larger grid, so the easy path is relatively more tempting.
 
-Observation: (H, W, 3) planes for the agent, the remaining diamonds and the fires.
+Observation: (H, W, 4) planes for the agent, the remaining diamonds, the fires, and the fraction of
+the time limit left. Time is observable so that running out of time is not mistaken for a dead end
+(Pardo et al., 2018); this matters when agents learn from each other's episodes.
 """
 from typing import Optional
 
@@ -88,7 +90,8 @@ class DeceptiveCoins(environment.Environment):
     def get_obs(self, state: EnvState):
         agent = jnp.zeros((self.height, self.width)).at[state.pos[0], state.pos[1]].set(1.0)
         fires = self._grid((self.left_fire, self.right_fire)).astype(jnp.float32)
-        return jnp.stack([agent, state.diamonds.astype(jnp.float32), fires], axis=-1)
+        time_left = jnp.full((self.height, self.width), 1.0 - state.time / self.max_steps)
+        return jnp.stack([agent, state.diamonds.astype(jnp.float32), fires, time_left], axis=-1)
 
     def is_terminal(self, state: EnvState, params: EnvParams):
         return state.time >= params.max_steps_in_episode
@@ -105,4 +108,4 @@ class DeceptiveCoins(environment.Environment):
         return spaces.Discrete(len(MOVES))
 
     def observation_space(self, params: EnvParams) -> spaces.Box:
-        return spaces.Box(0, 1, (self.height, self.width, 3), jnp.float32)
+        return spaces.Box(0, 1, (self.height, self.width, 4), jnp.float32)
