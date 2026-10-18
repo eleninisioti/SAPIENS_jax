@@ -1,7 +1,10 @@
-# Kheperax deceptive maze as a fully observed RL task: lasers and bumpers plus the robot's position and
-# the time left. Reward is minus the distance to the target; the direct route ends in a dead end.
+# Kheperax deceptive maze as a fully observed RL task: lasers, bumpers, the robot's position and the
+# time left. Reward: 10 x the decrease in distance to the target, plus 50 on reaching it. Driving the
+# routes with a scripted controller (discount 0.99): parking at the dead end under the target is worth
+# 5.0, solving the maze (119 steps, first moving away from the target) 18.1. Kheperax's own reward
+# (minus the distance every step) makes parking optimal (-24.7 against -45.4), so it is not used.
 ENV_NAME: Kheperax-standard
-ENV_KWARGS: {position: true}
+ENV_KWARGS: {position: true, reward: progress}
 TIME_OBS: true
 HIDDEN: [128, 128]
 TOTAL_STEPS: 5_000_000

@@ -5,8 +5,10 @@ import jax.numpy as jnp
 
 from envs.tiny_alchemy import envs as alchemy_envs
 
-# Kheperax wheel-speed commands (left, right): forward, veer left / right, spin left / right
-KHEPERAX_ACTIONS = jnp.array([[1.0, 1.0], [0.5, 1.0], [1.0, 0.5], [-1.0, 1.0], [1.0, -1.0]])
+# Kheperax wheel-speed commands (left, right): forward, veer left / right, turn left / right in place.
+# Turn rates are about 0.13 rad per step (veer) and 0.42 (in place); full-speed differential commands
+# turn by over 1 rad per step, too coarse to hold a heading.
+KHEPERAX_ACTIONS = jnp.array([[1.0, 1.0], [0.85, 1.0], [1.0, 0.85], [-0.25, 0.25], [0.25, -0.25]])
 
 
 def _import_navix():
@@ -70,6 +72,12 @@ class Env:
             self.env = TargetKheperaxTask(config)
             # position: add the robot's (x, y) to its laser and bumper readings
             self.kheperax_position = bool((kwargs or {}).get("position", False))
+            # reward: "distance" (Kheperax's own: minus the distance every step) or "progress"
+            # (PROGRESS_SCALE x the decrease in distance, plus GOAL_BONUS on reaching the target)
+            self.kheperax_reward = (kwargs or {}).get("reward", "distance")
+            self.kheperax_scale = float((kwargs or {}).get("progress_scale", 10.0))
+            self.kheperax_bonus = float((kwargs or {}).get("goal_bonus", 50.0))
+            self.kheperax_target = jnp.array(config.target_pos)
             self.default_params = None
             self.max_steps = int(config.episode_length)
             self.num_actions = len(KHEPERAX_ACTIONS)
@@ -155,8 +163,13 @@ class Env:
             obs, reward = ts.observation, ts.reward
         elif self.kind == "kheperax":
             ks, t = state
+            before = jnp.linalg.norm(self.kheperax_target - jnp.array([ks.robot.posture.x, ks.robot.posture.y]))
             ks = self.env.step(ks, KHEPERAX_ACTIONS[action])
             ks = ks.replace(reward=jnp.float32(ks.reward), done=jnp.asarray(ks.done))
+            if self.kheperax_reward == "progress":
+                after = -ks.reward   # Kheperax's reward is minus the distance to the target
+                ks = ks.replace(reward=jnp.float32(self.kheperax_scale * (before - after)
+                                                   + self.kheperax_bonus * ks.done))
             done = ks.done | (t + 1 >= self.max_steps)
             ts, obs, reward = (ks, t + 1), self._kheperax_obs(ks), ks.reward
         else:
