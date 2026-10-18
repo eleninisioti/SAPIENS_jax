@@ -60,8 +60,8 @@ def make_train(cfg, env):
 
     def group_disagreement(params, obs):
         probe = obs.reshape(-1, env.obs_dim)  # current observations of all agents
-        actions = jax.vmap(lambda p: network.apply(p, probe)[0].argmax(-1))(params)
-        return disagreement(actions, env.num_actions)
+        values = jax.vmap(lambda p: network.apply(p, probe)[0])(params)
+        return disagreement(values)
 
     def adapt(s, t):
         returns = jnp.where(s["adapt_count"] > 0, s["adapt_sum"] / jnp.maximum(s["adapt_count"], 1), -jnp.inf)

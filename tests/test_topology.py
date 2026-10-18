@@ -80,7 +80,14 @@ def test_adaptive_discovery_broadcasts_only_after_improvement():
     assert int(topology.step(s, jax.random.PRNGKey(0), 211, c).adj.sum()) == 0
 
 
-def test_disagreement():
+def test_disagreement_ignores_ties():
     from sapiens.common import disagreement
-    assert float(disagreement(jnp.array([[0, 1], [0, 1], [0, 1]]), 3)) == 0.0
-    onp.testing.assert_allclose(float(disagreement(jnp.array([[0, 0], [0, 1], [1, 2]]), 3)), 1 - (2 / 3 + 1 / 3) / 2)
+    # one state, three actions; all agents prefer action 0 -> full conformity
+    agree = jnp.array([[[1.0, 0.0, 0.0]], [[2.0, 1.0, 0.0]], [[1.0, 0.5, 0.5]]])
+    assert float(disagreement(agree)) == 0.0
+    # actions 0 and 1 tied for every agent: arbitrary tie-breaking is not disagreement
+    ties = jnp.array([[[1.0, 1.0, 0.0]], [[1.0, 1.0, 0.0]], [[2.0, 2.0, 0.0]]])
+    assert float(disagreement(ties)) == 0.0
+    # agent 2 strictly prefers action 2 over the majority action 0
+    split = jnp.array([[[1.0, 0.0, 0.0]], [[1.0, 0.0, 0.0]], [[0.0, 0.0, 1.0]]])
+    onp.testing.assert_allclose(float(disagreement(split)), 1 / 3, rtol=1e-6)

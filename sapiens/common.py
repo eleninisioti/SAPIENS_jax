@@ -40,11 +40,18 @@ def conv_shape(cfg, env):
     return tuple(env.obs_shape) if cfg["NETWORK"] == "cnn" else None
 
 
-def disagreement(actions, num_actions):
-    """actions: (agents, states) greedy actions on shared probe states. Returns the mean fraction
-    of agents that do not take the majority action (0 = full conformity)."""
-    counts = jax.nn.one_hot(actions, num_actions).sum(0)            # (states, actions)
-    return 1.0 - (counts.max(-1) / actions.shape[0]).mean()
+def disagreement(values, tolerance=0.01):
+    """values: (agents, states, actions) Q-values or logits on shared probe states.
+
+    Fraction of (agent, state) pairs where the group's majority greedy action is not (near-)greedy
+    for the agent, i.e. worse than its best action by more than `tolerance` of its value range.
+    Equally valued actions are therefore not counted as disagreement (0 = full conformity).
+    """
+    greedy = values.argmax(-1)
+    majority = jax.nn.one_hot(greedy, values.shape[-1]).sum(0).argmax(-1)       # (states,)
+    v_majority = jnp.take_along_axis(values, majority[None, :, None], -1)[..., 0]
+    v_max, v_min = values.max(-1), values.min(-1)
+    return 1.0 - (v_majority >= v_max - tolerance * (v_max - v_min)).mean()
 
 
 def init_params(network, key, n, obs_dim, shared):
