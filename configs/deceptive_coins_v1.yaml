@@ -1,0 +1,6 @@
+# Deceptive Coins (the deceptive grid world from the 2022 paper's appendix): an easy path worth 2
+# next to the start, a longer path worth 5; v1: the better path's rewards are further away
+ENV_NAME: DeceptiveCoins-v1
+HIDDEN: [64, 64]
+TOTAL_STEPS: 1_000_000
+LOG_INTERVAL: 10_000

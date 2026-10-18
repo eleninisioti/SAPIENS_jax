@@ -68,9 +68,9 @@ class Env:
             self.default_params = None
             self.max_steps = int(config.episode_length)
             self.num_actions = len(KHEPERAX_ACTIONS)
-        elif name == "DeceptiveCoins-v0":
+        elif name.startswith("DeceptiveCoins"):
             from envs.deceptive_coins import DeceptiveCoins
-            self.env = DeceptiveCoins()
+            self.env = DeceptiveCoins(name.split("-")[1])
             self.default_params = self.env.default_params
             self.max_steps = int(self.default_params.max_steps_in_episode)
         elif self.is_alchemy:

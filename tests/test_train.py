@@ -152,3 +152,15 @@ def test_deceptive_coins_paths():
     assert play(optimal) == (5.0, True)                                     # the better path
     # the barrier: after committing right the agent cannot reach the left diamond
     assert play([right, left, left, left]) == (0.0, False)
+
+
+def test_deceptive_coins_v1_optimal_path():
+    env = Env("DeceptiveCoins-v1")
+    p = env.default_params
+    _, s = env.reset(jax.random.PRNGKey(0), p)
+    up, down, left, right = 0, 1, 2, 3
+    total = 0.0
+    for a in [right] * 5 + [up] * 3 + [right] * 3 + [down] * 6 + [up] * 3 + [right] * 2:
+        _, s, r, d = env.step(jax.random.PRNGKey(0), s, a, p)
+        total += float(r)
+    assert total == 5.0 and bool(d)

@@ -6,6 +6,9 @@ fire: return 5, but only for an agent that leaves the easy reward behind. Once t
 one side a barrier closes behind it, so each episode commits to one path. Touching a fire or
 running out of time ends the episode.
 
+Two layouts: v0 is the small level of the 2022 paper; v1 puts the right-hand rewards further away
+on a larger grid, so the easy path is relatively more tempting.
+
 Observation: (H, W, 3) planes for the agent, the remaining diamonds and the fires.
 """
 from typing import Optional
@@ -16,20 +19,14 @@ import jax.numpy as jnp
 from flax import struct
 from gymnax.environments import environment, spaces
 
-HEIGHT, WIDTH = 5, 13
-START = (2, 6)
-LEFT_DIAMONDS = ((2, 5),)
-RIGHT_DIAMONDS = ((2, 9), (0, 11), (4, 11))
-LEFT_FIRE, RIGHT_FIRE = (2, 0), (2, 12)
+LAYOUTS = {
+    "v0": dict(height=5, width=13, start=(2, 6), left_diamonds=((2, 5),), left_fire=(2, 0),
+               right_diamonds=((2, 9), (0, 11), (4, 11)), right_fire=(2, 12), max_steps=20),
+    "v1": dict(height=7, width=21, start=(3, 10), left_diamonds=((3, 9),), left_fire=(3, 6),
+               right_diamonds=((3, 15), (0, 18), (6, 18)), right_fire=(3, 20), max_steps=30),
+}
 LEFT_FIRE_REWARD, RIGHT_FIRE_REWARD = 1.0, 2.0
 MOVES = jnp.array([[-1, 0], [1, 0], [0, -1], [0, 1]])  # up, down, left, right
-
-
-def _grid(cells):
-    g = jnp.zeros((HEIGHT, WIDTH), bool)
-    for r, c in cells:
-        g = g.at[r, c].set(True)
-    return g
 
 
 @struct.dataclass
@@ -46,28 +43,41 @@ class EnvParams:
 
 
 class DeceptiveCoins(environment.Environment):
-    optimal_return = len(RIGHT_DIAMONDS) + RIGHT_FIRE_REWARD   # 5
-    deceptive_return = len(LEFT_DIAMONDS) + LEFT_FIRE_REWARD   # 2
+    optimal_return = 3 + RIGHT_FIRE_REWARD   # 5
+    deceptive_return = 1 + LEFT_FIRE_REWARD  # 2
+
+    def __init__(self, layout="v0"):
+        super().__init__()
+        for k, v in LAYOUTS[layout].items():
+            setattr(self, k, v)
+        self.layout = layout
+
+    def _grid(self, cells):
+        g = jnp.zeros((self.height, self.width), bool)
+        for r, c in cells:
+            g = g.at[r, c].set(True)
+        return g
 
     @property
     def default_params(self) -> EnvParams:
-        return EnvParams()
+        return EnvParams(max_steps_in_episode=self.max_steps)
 
     def reset_env(self, key: chex.PRNGKey, params: EnvParams):
-        state = EnvState(pos=jnp.array(START), diamonds=_grid(LEFT_DIAMONDS + RIGHT_DIAMONDS),
+        state = EnvState(pos=jnp.array(self.start), diamonds=self._grid(self.left_diamonds + self.right_diamonds),
                          side=jnp.array(0), time=0)
         return self.get_obs(state), state
 
     def step_env(self, key: chex.PRNGKey, state: EnvState, action, params: EnvParams):
-        new = jnp.clip(state.pos + MOVES[action], jnp.array([0, 0]), jnp.array([HEIGHT - 1, WIDTH - 1]))
+        start_col = self.start[1]
+        new = jnp.clip(state.pos + MOVES[action], jnp.array([0, 0]), jnp.array([self.height - 1, self.width - 1]))
         # the barrier behind a committed agent: it cannot cross back to (or past) the start column
-        blocked = ((state.side == -1) & (new[1] >= START[1])) | ((state.side == 1) & (new[1] <= START[1]))
+        blocked = ((state.side == -1) & (new[1] >= start_col)) | ((state.side == 1) & (new[1] <= start_col))
         pos = jnp.where(blocked, state.pos, new)
-        side = jnp.where(state.side != 0, state.side, jnp.sign(pos[1] - START[1]))
+        side = jnp.where(state.side != 0, state.side, jnp.sign(pos[1] - start_col))
 
         diamond = state.diamonds[pos[0], pos[1]]
-        at_left = (pos[0] == LEFT_FIRE[0]) & (pos[1] == LEFT_FIRE[1])
-        at_right = (pos[0] == RIGHT_FIRE[0]) & (pos[1] == RIGHT_FIRE[1])
+        at_left = (pos[0] == self.left_fire[0]) & (pos[1] == self.left_fire[1])
+        at_right = (pos[0] == self.right_fire[0]) & (pos[1] == self.right_fire[1])
         reward = diamond.astype(jnp.float32) + LEFT_FIRE_REWARD * at_left + RIGHT_FIRE_REWARD * at_right
 
         state = EnvState(pos=pos, diamonds=state.diamonds.at[pos[0], pos[1]].set(False), side=side,
@@ -76,8 +86,8 @@ class DeceptiveCoins(environment.Environment):
         return jax.lax.stop_gradient(self.get_obs(state)), state, reward, done, {"discount": 1.0 - done}
 
     def get_obs(self, state: EnvState):
-        agent = jnp.zeros((HEIGHT, WIDTH)).at[state.pos[0], state.pos[1]].set(1.0)
-        fires = _grid((LEFT_FIRE, RIGHT_FIRE)).astype(jnp.float32)
+        agent = jnp.zeros((self.height, self.width)).at[state.pos[0], state.pos[1]].set(1.0)
+        fires = self._grid((self.left_fire, self.right_fire)).astype(jnp.float32)
         return jnp.stack([agent, state.diamonds.astype(jnp.float32), fires], axis=-1)
 
     def is_terminal(self, state: EnvState, params: EnvParams):
@@ -85,7 +95,7 @@ class DeceptiveCoins(environment.Environment):
 
     @property
     def name(self) -> str:
-        return "DeceptiveCoins-v0"
+        return f"DeceptiveCoins-{self.layout}"
 
     @property
     def num_actions(self) -> int:
@@ -95,4 +105,4 @@ class DeceptiveCoins(environment.Environment):
         return spaces.Discrete(len(MOVES))
 
     def observation_space(self, params: EnvParams) -> spaces.Box:
-        return spaces.Box(0, 1, (HEIGHT, WIDTH, 3), jnp.float32)
+        return spaces.Box(0, 1, (self.height, self.width, 3), jnp.float32)
