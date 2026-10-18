@@ -69,11 +69,14 @@ def make_train(cfg, env, return_buffers=False):
         params = init_params(network, k_net, n, env.obs_dim, shared=centralized)
         obs, env_state = vreset(jax.random.split(k_env, n * n_envs).reshape(n, n_envs, -1), env_params)
         buf = jax.vmap(lambda _: rb.init(cfg["BUFFER_SIZE"], env.obs_dim))(jnp.arange(n))
+        # SHARE_SOURCE=recent: a separate window of each agent's own latest transitions to share from
+        recent = jax.vmap(lambda _: rb.init(cfg["SHARE_WINDOW"] if cfg["SHARE_SOURCE"] == "recent" else 1,
+                                            env.obs_dim))(jnp.arange(n))
         w_obs, w_act = hash_weights(k_hash, env.obs_dim)
 
         zeros = jnp.zeros((n,), jnp.float32)
         state = dict(
-            params=params, target=params, opt=jax.vmap(tx.init)(params), buf=buf,
+            params=params, target=params, opt=jax.vmap(tx.init)(params), buf=buf, recent=recent,
             env_state=env_state, obs=obs, topo=topology.init_state(cfg, adj0),
             ep_return=jnp.zeros((n, n_envs)), ret_sum=zeros, ret_count=zeros, loss_sum=zeros,
             loss_count=zeros, received=zeros, rng=rng,
@@ -89,6 +92,9 @@ def make_train(cfg, env, return_buffers=False):
 
             own = dict(obs=s["obs"], action=action, reward=reward, next_obs=next_obs, done=done)
             buf = jax.vmap(rb.add)(s["buf"], own, jnp.ones((n, n_envs), bool))
+            recent = s["recent"]
+            if cfg["SHARE_SOURCE"] == "recent":
+                recent = jax.vmap(rb.add)(recent, own, jnp.ones((n, n_envs), bool))
 
             received = s["received"]
             if sharing:
@@ -100,7 +106,8 @@ def make_train(cfg, env, return_buffers=False):
                 send = s["topo"].adj & active[:, None]                       # (sender, receiver)
                 # each sender draws a distinct batch for each receiver: (sender, receiver, L, ...)
                 keys = jax.random.split(k_sample, n * n).reshape(n, n, -1)
-                batches = jax.vmap(lambda b, ks: jax.vmap(lambda k: rb.sample(b, k, share_batch))(ks))(buf, keys)
+                source = recent if cfg["SHARE_SOURCE"] == "recent" else buf
+                batches = jax.vmap(lambda b, ks: jax.vmap(lambda k: rb.sample(b, k, share_batch))(ks))(source, keys)
                 incoming = jax.tree.map(lambda x: jnp.swapaxes(x, 0, 1).reshape(n, n * share_batch, *x.shape[3:]), batches)
                 in_mask = jnp.repeat(send.T, share_batch, axis=1)             # (receiver, sender * L)
                 buf = jax.vmap(rb.add)(buf, incoming, in_mask)
@@ -108,7 +115,7 @@ def make_train(cfg, env, return_buffers=False):
 
             ep_return = s["ep_return"] + reward
             s = dict(
-                s, buf=buf, env_state=env_state, obs=next_obs, rng=rng, received=received,
+                s, buf=buf, recent=recent, env_state=env_state, obs=next_obs, rng=rng, received=received,
                 ret_sum=s["ret_sum"] + jnp.where(done, ep_return, 0.0).sum(-1),
                 ret_count=s["ret_count"] + done.sum(-1),
                 ep_return=jnp.where(done, 0.0, ep_return),

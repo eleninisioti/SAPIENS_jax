@@ -58,6 +58,9 @@ DEFAULTS = dict(
     SHARE_INTERVAL=0,          # DQN only. 0: share at the end of each episode (as in the paper); k > 0: every k steps
     P_SHARE=1.0,               # probability that a sharing opportunity is used (V-trace: once per update)
     SHARE_BATCH=16,            # sent to each neighbour per sharing event: transitions (DQN) or trajectories (V-trace)
+    SHARE_SOURCE="buffer",     # DQN: buffer (whole replay buffer, received transitions included, as in the 2022
+                               # paper) | recent (only the agent's own last SHARE_WINDOW transitions: no re-sharing)
+    SHARE_WINDOW=1_000,
     # topology parameters, tuned per topology on merging paths with held-out seeds (sweep topo_params)
     RING_K=6,
     SW_K=4,
