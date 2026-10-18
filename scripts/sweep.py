@@ -39,6 +39,7 @@ SWEEPS = {
     # main alchemy comparison with the frozen topology parameters, on the reported seeds 0-19
     "alchemy_main": [("bestoften_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 12),
                      ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
+    "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     "single_path": [("single_path", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "deepsea_size": [("deepsea", {"ENV_KWARGS.size": [24, 32], "EVAL_STEPS": [32],
                                   "TOPOLOGY": ["independent", "fully", "ring", "periodic", "centralized"]}, 20, 4)],
@@ -84,6 +85,12 @@ CLUSTERS = {
     "itu": ["--partition=scavenge", "--cpus-per-task=4", "--mem=48G", "--mail-type=NONE",
             "--exclude=desktop[1,6-8,12,15],cn16,cn17"],
 }
+# convolutions fail with cuDNN errors on the ITU V100 nodes with the current JAX / CUDA wheels
+ITU_NO_V100 = "--exclude=desktop[1,6-8,12,15],cn[3-6],cn16,cn17"
+
+
+def uses_cnn(runs):
+    return any("NETWORK: cnn" in open(f"configs/{a.split()[1].split('/')[-1]}").read() for _, a, _ in runs)
 
 
 def main():
@@ -105,8 +112,11 @@ def main():
 
     hours = max(h for _, _, h in runs)
     tasks = args.tasks or f"0-{len(runs) - 1}"
+    options = list(CLUSTERS[args.cluster])
+    if args.cluster == "itu" and uses_cnn(runs):
+        options = [ITU_NO_V100 if o.startswith("--exclude") else o for o in options]
     cmd = ["sbatch", f"--array={tasks}%{args.max_parallel}", f"--job-name=sapiens-{args.sweep}",
-           f"--time={hours}:00:00", f"--output={out}/logs/%A_%a.log", *CLUSTERS[args.cluster],
+           f"--time={hours}:00:00", f"--output={out}/logs/%A_%a.log", *options,
            "scripts/job.sh", runs_file]
     print(f"{len(runs)} runs written to {runs_file}")
     print(" ".join(cmd))

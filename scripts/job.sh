@@ -15,5 +15,7 @@ OUT="$(dirname "$RUNS_FILE")/$NAME"
 
 echo "run $NAME on $(hostname), commit $(git rev-parse --short HEAD 2>/dev/null || echo none)"
 nvidia-smi -L
+# tasks of one array start together in a fresh worktree: build its environment once, under a lock
+flock .uv-sync.lock uv sync --locked --quiet
 # shellcheck disable=SC2086
 uv run --locked python -m sapiens.train $ARGS --output "$OUT"

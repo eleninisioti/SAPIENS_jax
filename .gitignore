@@ -6,3 +6,4 @@ logs/
 projects/
 *.egg-info/
 .pytest_cache/
+.uv-sync.lock

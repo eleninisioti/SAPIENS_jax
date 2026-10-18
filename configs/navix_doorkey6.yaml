@@ -1,0 +1,12 @@
+# MiniGrid DoorKey 6x6 (NAVIX): pick up a key, open a door, reach the goal; reward only at the goal
+ENV_NAME: Navix-DoorKey-6x6-v0
+NETWORK: cnn
+HIDDEN: [128]
+TOTAL_STEPS: 3_000_000
+NUM_ENVS: 8
+GAMMA: 0.99
+LR: 2.5e-4
+SHARE_INTERVAL: 16
+LOG_INTERVAL: 30_000
+EVAL_EPISODES: 4
+SUCCESS_METRIC: goal
