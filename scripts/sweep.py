@@ -41,6 +41,11 @@ SWEEPS = {
                      ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
     "navix_vtrace": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES}, 5, 8)],
     "navix_vtrace_long": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES, "TOTAL_STEPS": [80_609_280]}, 5, 8)],
+    # single-learner tuning (no sharing) before any topology comparison on a task
+    "tune_kheperax": [("kheperax", {"TOPOLOGY": ["independent"], "LR": [2.5e-4, 1e-3], "EPS_FRACTION": [0.1, 0.5],
+                                    "EPS_END": [0.05, 0.2], "GAMMA": [0.99, 0.995]}, 10, 4, 1000),
+                      ("kheperax", {"TOPOLOGY": ["independent"], "ALGO": ["vtrace"], "NUM_ENVS": [16], "ROLLOUT_LEN": [32],
+                                    "LOG_INTERVAL": [51_200], "LR": [3e-4, 1e-3], "ENT_COEF": [0.01, 0.05]}, 10, 4, 1000)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
     "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [
