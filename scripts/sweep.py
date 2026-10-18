@@ -50,6 +50,7 @@ SWEEPS = {
                                               "ENT_COEF": [0.01, 0.03], "TOTAL_STEPS": [40_304_640]}, 10, 6, 1000)],
     "tune_coins": [(c, {"TOPOLOGY": ["independent"], "LR": [1e-4, 1e-3], "GAMMA": [0.9, 0.99],
                         "EPS_FRACTION": [0.1, 0.5]}, 10, 3, 1000) for c in ["deceptive_coins", "deceptive_coins_v1"]],
+    "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
     "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [

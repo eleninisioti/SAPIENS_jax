@@ -4,3 +4,8 @@ ENV_NAME: DeceptiveCoins-v1
 HIDDEN: [64, 64]
 TOTAL_STEPS: 1_000_000
 LOG_INTERVAL: 10_000
+# single-learner tuning (sweep tune_coins, held-out seeds): with GAMMA 0.9 the easy path is optimal
+# for the discounted objective, so 0.9 is excluded; best of the rest: 62% of agents reach 5 alone
+LR: 1.0e-3
+GAMMA: 0.99
+EPS_FRACTION: 0.1
