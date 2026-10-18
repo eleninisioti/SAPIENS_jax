@@ -40,6 +40,7 @@ SWEEPS = {
     "alchemy_main": [("bestoften_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 12),
                      ("merging_paths", {"TOPOLOGY": TOPOLOGIES[:7]}, 20, 4)],
     "navix_vtrace": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES}, 5, 8)],
+    "navix_vtrace_long": [("navix_doorkey8_vtrace", {"TOPOLOGY": TOPOLOGIES, "TOTAL_STEPS": [80_609_280]}, 5, 8)],
     "navix6": [("navix_doorkey6", {"TOPOLOGY": TOPOLOGIES}, 5, 6)],
     # adaptive topologies on the reported seeds; discovery uses its own tuned broadcast window
     "alchemy_adaptive": [(c, grid, 20, h) for c, h in [("merging_paths", 4), ("bestoften_paths", 12)] for grid in [
