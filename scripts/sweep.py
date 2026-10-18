@@ -69,6 +69,8 @@ SWEEPS = {
                        ("bestoften_paths", {"TOPOLOGY": ["adaptive_diversity"], "TIME_OBS": [True]}, 20, 16),
                        ("bestoften_paths", {"TOPOLOGY": ["adaptive_discovery"], "T_HIGH": [1600], "TIME_OBS": [True]}, 20, 16)],
     "kheperax_main": [("kheperax_pos", {"TOPOLOGY": TOPOLOGIES, "TOTAL_STEPS": [10_000_000]}, 20, 6)],
+    "kheperax_long": [("kheperax_pos", {"TOPOLOGY": ["dynamic", "periodic", "fully", "independent", "centralized"],
+                                        "TOTAL_STEPS": [30_000_000], "LOG_INTERVAL": [100_000]}, 20, 16)],
     "coins_main": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES}, 20, 2)],
     # sharing on a fixed clock: at episode ends, agents on the short deceptive path share ~5x more often
     "coins_fixed_share": [("deceptive_coins_v1", {"TOPOLOGY": TOPOLOGIES, "SHARE_INTERVAL": [16]}, 20, 2)],
