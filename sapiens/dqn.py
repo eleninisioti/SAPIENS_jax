@@ -33,6 +33,8 @@ def make_train(cfg, env, return_buffers=False):
     sharing = cfg["TOPOLOGY"] not in ("independent", "centralized") and n > 1
     network = MLP(env.num_actions, tuple(cfg["HIDDEN"]), conv_shape(cfg, env))
     tx = optax.adam(cfg["LR"])
+    if cfg["DQN_GRAD_CLIP"]:
+        tx = optax.chain(optax.clip_by_global_norm(cfg["DQN_GRAD_CLIP"]), tx)
     evaluate = make_evaluate(env, lambda p, obs, k: network.apply(p, obs).argmax(),
                              cfg["EVAL_STEPS"] or env.max_steps, cfg["EVAL_EPISODES"])
 
@@ -118,7 +120,10 @@ def make_train(cfg, env, return_buffers=False):
             q_next = network.apply(target, batch["next_obs"]).max(-1)
             y = batch["reward"] + (1.0 - batch["done"]) * cfg["GAMMA"] * q_next
             q = jnp.take_along_axis(network.apply(params, batch["obs"]), batch["action"][:, None], -1)[:, 0]
-            return jnp.mean((q - jax.lax.stop_gradient(y)) ** 2)
+            td = q - jax.lax.stop_gradient(y)
+            if cfg["DQN_LOSS"] == "huber":   # as in the original DQN; robust to large TD errors
+                return jnp.mean(optax.huber_loss(td))
+            return jnp.mean(td ** 2)
 
         def learn(s, _):
             rng, k = jax.random.split(s["rng"])

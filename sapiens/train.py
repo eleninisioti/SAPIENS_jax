@@ -45,6 +45,8 @@ DEFAULTS = dict(
     LEARNING_STARTS=10_000,
     TRAIN_INTERVAL=4,          # steps per gradient update
     TARGET_UPDATE_INTERVAL=1_000,
+    DQN_LOSS="mse",            # mse | huber
+    DQN_GRAD_CLIP=None,        # global gradient-norm clip for DQN (e.g. 10), None to disable
     # V-trace actor-critic
     ROLLOUT_LEN=32,
     VF_COEF=0.5,
