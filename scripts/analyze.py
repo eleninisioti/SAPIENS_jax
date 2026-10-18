@@ -124,7 +124,7 @@ def _style(ax, xlabel, ylabel):
 
 
 def plot_curves(group_runs, key, ylabel, path, reduce_agents):
-    fig, ax = plt.subplots(figsize=(6, 3.6))
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
     for run in sorted(group_runs, key=lambda r: TOPOLOGY_ORDER.index(r["cfg"]["TOPOLOGY"])):
         topo = run["cfg"]["TOPOLOGY"]
         y = run["m"][key]
@@ -134,7 +134,7 @@ def plot_curves(group_runs, key, ylabel, path, reduce_agents):
         ax.plot(x, mean, color=COLORS[topo], linewidth=2, label=LABELS[topo])
         ax.fill_between(x, mean - err, mean + err, color=COLORS[topo], alpha=0.15, linewidth=0)
     _style(ax, "Environment steps per agent", ylabel)
-    ax.legend(frameon=False, fontsize=8, labelcolor=INK_2, loc="upper left")
+    ax.legend(frameon=False, fontsize=8, labelcolor=INK_2, loc="upper left", bbox_to_anchor=(1.01, 1.0))
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
